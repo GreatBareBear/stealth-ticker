@@ -1,4 +1,4 @@
-import { app, shell, BrowserWindow, ipcMain, Tray, Menu } from 'electron'
+import { app, shell, BrowserWindow, ipcMain, Tray, Menu, globalShortcut } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
@@ -8,6 +8,7 @@ const store = new Store()
 
 let tray: Tray | null = null
 let settingsWindow: BrowserWindow | null = null
+let mainWindow: BrowserWindow | null = null
 
 function openSettings(): void {
   if (settingsWindow) {
@@ -17,14 +18,15 @@ function openSettings(): void {
   }
 
   settingsWindow = new BrowserWindow({
-    width: 800,
-    height: 600,
+    width: 600,
+    height: 500,
     show: false,
     autoHideMenuBar: true,
     ...(process.platform === 'linux' ? { icon } : {}),
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
-      sandbox: false
+      sandbox: false,
+      webSecurity: false
     }
   })
 
@@ -47,9 +49,19 @@ function createTray(): void {
   tray = new Tray(icon)
   const contextMenu = Menu.buildFromTemplate([
     { label: 'Settings', click: openSettings },
-    { label: 'About', click: () => { console.log('About clicked') } },
+    {
+      label: 'About',
+      click: () => {
+        console.log('About clicked')
+      }
+    },
     { type: 'separator' },
-    { label: 'Exit', click: () => { app.quit() } }
+    {
+      label: 'Exit',
+      click: () => {
+        app.quit()
+      }
+    }
   ] as (Electron.MenuItemConstructorOptions | Electron.MenuItem)[])
   tray.setToolTip('Stealth Stock Monitor')
   tray.setContextMenu(contextMenu)
@@ -57,7 +69,7 @@ function createTray(): void {
 
 function createWindow(): void {
   // Create the browser window.
-  const mainWindow = new BrowserWindow({
+  mainWindow = new BrowserWindow({
     width: 300,
     height: 100,
     show: false,
@@ -69,12 +81,13 @@ function createWindow(): void {
     ...(process.platform === 'linux' ? { icon } : {}),
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
-      sandbox: false
+      sandbox: false,
+      webSecurity: false
     }
   })
 
   mainWindow.on('ready-to-show', () => {
-    mainWindow.show()
+    mainWindow?.show()
   })
 
   mainWindow.webContents.setWindowOpenHandler((details) => {
@@ -88,6 +101,33 @@ function createWindow(): void {
     mainWindow.loadURL(process.env['ELECTRON_RENDERER_URL'])
   } else {
     mainWindow.loadFile(join(__dirname, '../renderer/index.html'))
+  }
+}
+
+function registerBossKey(settings: any) {
+  globalShortcut.unregisterAll()
+  if (settings && settings.bossKeyEnabled && settings.bossKeyCombo) {
+    try {
+      globalShortcut.register(settings.bossKeyCombo, () => {
+        if (settings.bossKeyAction === 'exit') {
+          app.quit()
+        } else {
+          // Hide action
+          if (mainWindow) {
+            if (mainWindow.isVisible()) {
+              mainWindow.hide()
+            } else {
+              mainWindow.show()
+            }
+          }
+          if (settingsWindow && settingsWindow.isVisible()) {
+            settingsWindow.hide()
+          }
+        }
+      })
+    } catch (e) {
+      console.error('Failed to register boss key', e)
+    }
   }
 }
 
@@ -112,9 +152,12 @@ app.whenReady().then(() => {
   ipcMain.handle('store:get', (_event, key) => {
     return store.get(key)
   })
-  
+
   ipcMain.handle('store:set', (_event, key, value) => {
     store.set(key, value)
+    if (key === 'settings') {
+      registerBossKey(value)
+    }
   })
 
   ipcMain.handle('store:delete', (_event, key) => {
@@ -124,9 +167,19 @@ app.whenReady().then(() => {
   ipcMain.on('show-context-menu', (event) => {
     const template: (Electron.MenuItemConstructorOptions | Electron.MenuItem)[] = [
       { label: 'Settings', click: openSettings },
-      { label: 'About', click: () => { console.log('About clicked') } },
+      {
+        label: 'About',
+        click: () => {
+          console.log('About clicked')
+        }
+      },
       { type: 'separator' },
-      { label: 'Exit', click: () => { app.quit() } }
+      {
+        label: 'Exit',
+        click: () => {
+          app.quit()
+        }
+      }
     ]
     const menu = Menu.buildFromTemplate(template)
     const window = BrowserWindow.fromWebContents(event.sender)
@@ -137,6 +190,8 @@ app.whenReady().then(() => {
 
   createTray()
   createWindow()
+
+  registerBossKey(store.get('settings'))
 
   app.on('activate', function () {
     // On macOS it's common to re-create a window in the app when the
