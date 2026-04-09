@@ -24,6 +24,7 @@
     "@electron-toolkit/preload": "^3.0.2",
     "@electron-toolkit/utils": "^4.0.0",
     "@types/react-router-dom": "^5.3.3",
+    "antd": "^6.3.5",
     "electron-store": "^11.0.2",
     "lucide-react": "^1.7.0",
     "react-router-dom": "^7.14.0"
@@ -36,7 +37,7 @@
     "@types/react": "^19.2.7",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^5.1.1",
-    "electron": "^39.2.6",
+    "electron": "^39.8.7",
     "electron-builder": "^26.0.12",
     "electron-vite": "^5.0.0",
     "eslint": "^9.39.1",
