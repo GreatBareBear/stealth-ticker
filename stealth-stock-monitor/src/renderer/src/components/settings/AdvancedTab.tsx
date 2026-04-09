@@ -174,7 +174,6 @@ export function AdvancedTab(): React.JSX.Element {
 
         <Divider />
         <Title level={5}>行为与控制</Title>
-
         <Form.Item label="刷新间隔" name="refreshInterval">
           <Select style={{ width: 120 }}>
             <Select.Option value="1">1秒</Select.Option>
@@ -207,7 +206,6 @@ export function AdvancedTab(): React.JSX.Element {
 
         <Divider />
         <Title level={5}>快捷键</Title>
-
         <Form.Item label="老板键">
           <Space>
             <Form.Item name="bossKeyEnabled" valuePropName="checked" noStyle>
@@ -239,6 +237,7 @@ export function AdvancedTab(): React.JSX.Element {
             </Form.Item>
           </Space>
         </Form.Item>
+
 
         <Form.Item wrapperCol={{ offset: 6, span: 16 }}>
           <Button onClick={handleReset}>一键重置(R)</Button>
