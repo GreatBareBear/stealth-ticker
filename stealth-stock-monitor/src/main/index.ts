@@ -4,7 +4,8 @@ import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
 import Store from 'electron-store'
 
-const store = new Store()
+const StoreClass = typeof Store === 'function' ? Store : (Store as any).default
+const store = new StoreClass()
 
 let tray: Tray | null = null
 let settingsWindow: BrowserWindow | null = null
