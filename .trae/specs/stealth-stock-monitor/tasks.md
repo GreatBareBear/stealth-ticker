@@ -1,0 +1,32 @@
+# Tasks
+- [x] Task 1: 初始化桌面端项目架构
+  - [x] SubTask 1.1: 使用 Electron/Tauri 结合 React/Vue 和 TypeScript 搭建基础工程。
+  - [x] SubTask 1.2: 配置主进程（Main Process）和渲染进程（Renderer Process）的基础通信机制。
+  - [x] SubTask 1.3: 实现基础的本地配置存储模块。
+- [x] Task 2: 核心窗口与托盘管理开发
+  - [x] SubTask 2.1: 实现系统右下角托盘图标（Tray）及右键菜单（设置、关于、退出）。
+  - [x] SubTask 2.2: 实现行情悬浮窗窗口（无边框、透明、可拖拽、置顶控制）。
+  - [x] SubTask 2.3: 为行情悬浮窗添加右键菜单（设置、关于、退出）。
+- [ ] Task 3: 设置主界面开发 - 自选股票
+  - [ ] SubTask 3.1: 搭建设置界面的多 Tab 路由与基础 UI（关注的股票、会员、显示、高级等）。
+  - [ ] SubTask 3.2: 开发自选股票列表（支持高级筛选复选框）。
+  - [ ] SubTask 3.3: 接入股票搜索接口，实现 A股/港股 的代码、名称、拼音首字母模糊匹配添加功能。
+- [ ] Task 4: 设置主界面开发 - 显示与高级设置
+  - [ ] SubTask 4.1: 开发“显示”Tab，配置代码、名称（前2个字、强制4字符等）、现价及涨跌幅的截断/隐藏规则。
+  - [ ] SubTask 4.2: 开发“高级”Tab，实现文字大小、行距、背景颜色、透明度、刷新间隔等UI配置项。
+  - [ ] SubTask 4.3: 注册全局快捷键（老板键），实现一键隐藏/退出程序。
+- [ ] Task 5: 设置主界面开发 - 会员与股价图
+  - [ ] SubTask 5.1: 开发“会员”Tab 静态展示页面（免费版、普通会员、高级会员权限对比）。
+  - [ ] SubTask 5.2: 开发会员中心弹窗（开通/续费、会员迁移、激活码查验）。
+  - [ ] SubTask 5.3: 开发“股价图”Tab 配置（分时、日K、透明度、背景色等选项）。
+- [ ] Task 6: 行情数据对接与动态渲染
+  - [ ] SubTask 6.1: 接入实时股票行情 API，实现定时轮询拉取数据（A股、港股）。
+  - [ ] SubTask 6.2: 根据用户配置的显示规则、颜色、字体、行距等，在行情窗口动态渲染数据。
+  - [ ] SubTask 6.3: 在数据更新与添加股票时，严格校验会员等级对应的数量上限与刷新频率。
+
+# Task Dependencies
+- Task 2 depends on Task 1
+- Task 3 depends on Task 2
+- Task 4 depends on Task 2
+- Task 5 depends on Task 2
+- Task 6 depends on Task 3, Task 4
