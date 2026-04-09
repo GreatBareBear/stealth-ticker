@@ -1,13 +1,63 @@
-import React from 'react'
-import { Form, Select } from 'antd'
+import React, { useEffect, useState } from 'react'
+import { Form, Select, Typography, Spin } from 'antd'
+
+const { Title } = Typography
 
 export function ChartTab(): React.JSX.Element {
+  const [form] = Form.useForm()
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const loadSettings = async () => {
+      try {
+        const settings = await window.api.store.get('chartSettings')
+        if (settings) {
+          form.setFieldsValue(settings)
+        }
+      } catch (error) {
+        console.error('Failed to load chart settings:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+    loadSettings()
+  }, [form])
+
+  const handleValuesChange = async (_changedValues: any, allValues: any) => {
+    try {
+      const currentSettings = (await window.api.store.get('chartSettings')) || {}
+      const newSettings = { ...currentSettings, ...allValues }
+      await window.api.store.set('chartSettings', newSettings)
+    } catch (error) {
+      console.error('Failed to save chart settings:', error)
+    }
+  }
+
+  if (loading) {
+    return (
+      <div style={{ padding: '20px', textAlign: 'center' }}>
+        <Spin />
+      </div>
+    )
+  }
+
   return (
-    <div style={{ padding: '24px' }}>
-      <Form layout="horizontal" labelCol={{ span: 6 }} wrapperCol={{ span: 14 }}>
-        <Form.Item label="股价图显示内容">
+    <div style={{ padding: '0 16px', overflowY: 'auto', maxHeight: '100%' }}>
+      <Form 
+        form={form} 
+        layout="horizontal" 
+        labelCol={{ span: 6 }} 
+        wrapperCol={{ span: 16 }}
+        onValuesChange={handleValuesChange}
+        initialValues={{
+          chartType: '分时图',
+          background: '同主界面',
+          opacity: '同主界面'
+        }}
+      >
+        <Title level={5}>图表设置</Title>
+        <Form.Item label="股价图显示内容" name="chartType">
           <Select
-            defaultValue="分时图"
             options={[
               { value: '分时图', label: '分时图' },
               { value: '日K线', label: '日K线' },
@@ -22,9 +72,8 @@ export function ChartTab(): React.JSX.Element {
             ]}
           />
         </Form.Item>
-        <Form.Item label="背景">
+        <Form.Item label="背景" name="background">
           <Select
-            defaultValue="同主界面"
             options={[
               { value: '同主界面', label: '同主界面' },
               { value: '白色', label: '白色' },
@@ -33,9 +82,8 @@ export function ChartTab(): React.JSX.Element {
             ]}
           />
         </Form.Item>
-        <Form.Item label="透明度">
+        <Form.Item label="透明度" name="opacity">
           <Select
-            defaultValue="同主界面"
             options={[
               { value: '同主界面', label: '同主界面' },
               { value: '30%', label: '30%' },
