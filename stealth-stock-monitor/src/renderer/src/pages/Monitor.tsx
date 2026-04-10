@@ -77,7 +77,7 @@ function Monitor(): React.JSX.Element {
       if (visibleStocks.length === 0) return
 
       const symbols = visibleStocks.map((s: Stock) => s.symbol).join(',')
-      const url = `http://qt.gtimg.cn/q=${symbols}`
+      const url = `https://qt.gtimg.cn/q=${symbols}`
       const response = await fetch(url)
       const buffer = await response.arrayBuffer()
       const decoder = new TextDecoder('gbk')
@@ -87,7 +87,8 @@ function Monitor(): React.JSX.Element {
       const newData: Record<string, StockData> = {}
 
       lines.forEach((line) => {
-        if (!line.trim()) return
+        line = line.trim()
+        if (!line) return
         const match = line.match(/^v_(.*?)="(.*)";$/)
         if (match) {
           const fullSymbol = match[1]
