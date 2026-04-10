@@ -10,7 +10,7 @@
 
 ## Impact
 - Affected specs: 设置页信息架构、控件选型与交互一致性、可读性与隐蔽性（低视觉噪音）。
-- Affected code（确认采纳后）: [Settings.tsx](file:///workspace/stealth-stock-monitor/src/renderer/src/pages/Settings.tsx)，settings 组件目录（DisplayTab/AdvancedTab/DashboardTab 等），以及与 store 绑定的 settings schema。
+- Affected code（确认采纳后）: [Settings.tsx](file:///workspace/client/src/renderer/src/pages/Settings.tsx)，settings 组件目录（DisplayTab/AdvancedTab/DashboardTab 等），以及与 store 绑定的 settings schema。
 
 ## ADDED Requirements
 ### Requirement: 参考 UI 元素分析与落地建议
