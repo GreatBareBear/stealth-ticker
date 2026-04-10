@@ -1,5 +1,5 @@
-appId: com.electron.app
-productName: stealth-stock-monitor
+appId: com.stealth-ticker-client.app
+productName: stealth-ticker-client
 directories:
   buildResources: build
 files:
