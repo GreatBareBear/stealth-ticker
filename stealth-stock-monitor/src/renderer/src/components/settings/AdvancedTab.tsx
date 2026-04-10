@@ -9,10 +9,12 @@ import {
   Typography,
   Space,
   message,
-  Spin
+  Spin,
+  Segmented,
+  Divider
 } from 'antd'
 
-const { Text } = Typography
+const { Title, Text } = Typography
 
 export function AdvancedTab(): React.JSX.Element {
   const [form] = Form.useForm()
@@ -131,15 +133,19 @@ export function AdvancedTab(): React.JSX.Element {
           showTrayIcon: true
         }}
       >
+        <Title level={5}>外观与显示</Title>
+
         <Form.Item label="文字大小" name="fontSize">
-          <Select style={{ width: 120 }}>
-            <Select.Option value="12">12</Select.Option>
-            <Select.Option value="14">14</Select.Option>
-            <Select.Option value="16">16</Select.Option>
-            <Select.Option value="18">18</Select.Option>
-            <Select.Option value="20">20</Select.Option>
-            <Select.Option value="24">24</Select.Option>
-          </Select>
+          <Segmented
+            options={[
+              { label: '12', value: '12' },
+              { label: '14', value: '14' },
+              { label: '16', value: '16' },
+              { label: '18', value: '18' },
+              { label: '20', value: '20' },
+              { label: '24', value: '24' }
+            ]}
+          />
         </Form.Item>
 
         <Form.Item label="行距" name="lineHeight">
@@ -156,7 +162,7 @@ export function AdvancedTab(): React.JSX.Element {
           <Input type="color" style={{ width: 60, padding: 0, cursor: 'pointer', height: 32 }} />
         </Form.Item>
 
-        <Form.Item label="透明度" name="opacity">
+        <Form.Item label="透明度" name="opacity" extra="通过调节透明度，可方便上班使用">
           <Select style={{ width: 120 }}>
             <Select.Option value="0.2">20%</Select.Option>
             <Select.Option value="0.4">40%</Select.Option>
@@ -166,6 +172,8 @@ export function AdvancedTab(): React.JSX.Element {
           </Select>
         </Form.Item>
 
+        <Divider />
+        <Title level={5}>行为与控制</Title>
         <Form.Item label="刷新间隔" name="refreshInterval">
           <Select style={{ width: 120 }}>
             <Select.Option value="1">1秒</Select.Option>
@@ -178,6 +186,26 @@ export function AdvancedTab(): React.JSX.Element {
           </Select>
         </Form.Item>
 
+        <Form.Item label="总在最前" name="alwaysOnTop">
+          <Segmented
+            options={[
+              { label: '开启', value: true },
+              { label: '关闭', value: false }
+            ]}
+          />
+        </Form.Item>
+
+        <Form.Item label="显示通知区图标" name="showTrayIcon">
+          <Segmented
+            options={[
+              { label: '开启', value: true },
+              { label: '关闭', value: false }
+            ]}
+          />
+        </Form.Item>
+
+        <Divider />
+        <Title level={5}>快捷键</Title>
         <Form.Item label="老板键">
           <Space>
             <Form.Item name="bossKeyEnabled" valuePropName="checked" noStyle>
@@ -210,13 +238,6 @@ export function AdvancedTab(): React.JSX.Element {
           </Space>
         </Form.Item>
 
-        <Form.Item label="总在最前" name="alwaysOnTop" valuePropName="checked">
-          <Checkbox />
-        </Form.Item>
-
-        <Form.Item label="显示通知区图标" name="showTrayIcon" valuePropName="checked">
-          <Checkbox />
-        </Form.Item>
 
         <Form.Item wrapperCol={{ offset: 6, span: 16 }}>
           <Button onClick={handleReset}>一键重置(R)</Button>

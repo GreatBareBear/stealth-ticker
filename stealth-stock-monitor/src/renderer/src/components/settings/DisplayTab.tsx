@@ -1,5 +1,15 @@
 import React, { useEffect, useState } from 'react'
-import { Form, Switch, Select, Slider, InputNumber, Divider, Typography, Input, Spin } from 'antd'
+import {
+  Form,
+  Select,
+  Slider,
+  InputNumber,
+  Divider,
+  Typography,
+  Input,
+  Spin,
+  Segmented
+} from 'antd'
 
 const { Title, Text } = Typography
 
@@ -66,18 +76,25 @@ export function DisplayTab(): React.JSX.Element {
         }}
       >
         <Title level={5}>基本设置</Title>
-        <Form.Item label="深色模式" name="theme" valuePropName="checked">
-          <Switch />
+        <Form.Item label="深色模式" name="theme">
+          <Segmented
+            options={[
+              { label: '开启', value: true },
+              { label: '关闭', value: false }
+            ]}
+          />
         </Form.Item>
 
         <Form.Item label="涨跌颜色" name="colorTheme">
-          <Select style={{ width: 150 }}>
-            <Select.Option value="red-green">红涨绿跌 (中国大陆)</Select.Option>
-            <Select.Option value="green-red">绿涨红跌 (国际)</Select.Option>
-          </Select>
+          <Segmented
+            options={[
+              { label: '红涨绿跌 (中国大陆)', value: 'red-green' },
+              { label: '绿涨红跌 (国际)', value: 'green-red' }
+            ]}
+          />
         </Form.Item>
 
-        <Form.Item label="悬浮窗透明度" name="opacity">
+        <Form.Item label="悬浮窗透明度" name="opacity" extra="通过调节透明度，可方便上班使用">
           <Slider min={10} max={100} marks={{ 10: '透明', 100: '不透明' }} />
         </Form.Item>
 
@@ -114,11 +131,13 @@ export function DisplayTab(): React.JSX.Element {
         </Form.Item>
 
         <Form.Item label="价格显示格式" name="priceFormat">
-          <Select style={{ width: 150 }}>
-            <Select.Option value="price">仅价格</Select.Option>
-            <Select.Option value="priceAndChange">价格+涨跌幅</Select.Option>
-            <Select.Option value="none">不显示</Select.Option>
-          </Select>
+          <Segmented
+            options={[
+              { label: '仅价格', value: 'price' },
+              { label: '价格+涨跌幅', value: 'priceAndChange' },
+              { label: '不显示', value: 'none' }
+            ]}
+          />
         </Form.Item>
 
         <Form.Item label="涨跌额颜色" name="changeFormat">
@@ -133,20 +152,32 @@ export function DisplayTab(): React.JSX.Element {
         <Divider />
         <Title level={5}>布局与更新</Title>
 
-        <Form.Item label="显示涨跌幅" name="showChangePercent" valuePropName="checked">
-          <Switch />
+        <Form.Item label="显示涨跌幅" name="showChangePercent">
+          <Segmented
+            options={[
+              { label: '开启', value: true },
+              { label: '关闭', value: false }
+            ]}
+          />
         </Form.Item>
 
-        <Form.Item label="显示最高/最低价" name="showHighLow" valuePropName="checked">
-          <Switch />
+        <Form.Item label="显示最高/最低价" name="showHighLow">
+          <Segmented
+            options={[
+              { label: '开启', value: true },
+              { label: '关闭', value: false }
+            ]}
+          />
         </Form.Item>
 
         <Form.Item label="字体大小" name="fontSize">
-          <Select style={{ width: 120 }}>
-            <Select.Option value="small">小 (12px)</Select.Option>
-            <Select.Option value="medium">中 (14px)</Select.Option>
-            <Select.Option value="large">大 (16px)</Select.Option>
-          </Select>
+          <Segmented
+            options={[
+              { label: '小 (12px)', value: 'small' },
+              { label: '中 (14px)', value: 'medium' },
+              { label: '大 (16px)', value: 'large' }
+            ]}
+          />
         </Form.Item>
 
         <Form.Item label="行高" name="lineHeight">

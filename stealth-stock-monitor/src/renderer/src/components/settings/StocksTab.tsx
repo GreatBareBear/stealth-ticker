@@ -113,8 +113,8 @@ export function StocksTab(): React.JSX.Element {
     }
   }
 
-  const handleSelect = (_value: string, option: OptionType | OptionType[]): void => {
-    if (!Array.isArray(option)) {
+  const handleSelect = (_value: string, option?: OptionType | OptionType[]): void => {
+    if (option && !Array.isArray(option)) {
       setSelectedStock(option.data)
     }
   }
