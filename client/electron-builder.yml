@@ -1,5 +1,5 @@
-appId: com.stealth-ticker-client.app
-productName: stealth-ticker-client
+appId: com.stealthticker.app
+productName: client
 directories:
   buildResources: build
 files:
