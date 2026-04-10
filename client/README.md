@@ -1,4 +1,4 @@
-# client
+# stealth-ticker-client
 
 An Electron application with React and TypeScript.
 
