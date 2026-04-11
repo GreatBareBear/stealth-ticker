@@ -189,6 +189,11 @@ app.whenReady().then(() => {
     }
   })
 
+  ipcMain.on('resize-window', (event, { width, height }) => {
+    const win = BrowserWindow.fromWebContents(event.sender)
+    if (win) win.setSize(Math.ceil(width), Math.ceil(height))
+  })
+
   createTray()
   createWindow()
 

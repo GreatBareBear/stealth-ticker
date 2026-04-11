@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useRef, useLayoutEffect } from 'react'
 
 interface Stock {
   key: string
@@ -56,6 +56,27 @@ function Monitor(): React.JSX.Element {
   const [stocks, setStocks] = useState<Stock[]>([])
   const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS)
   const [stockData, setStockData] = useState<Record<string, StockData>>({})
+  const containerRef = useRef<HTMLDivElement>(null)
+
+  useLayoutEffect(() => {
+    if (!containerRef.current) return
+
+    const observer = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        const target = entry.target as HTMLElement
+        window.electron.ipcRenderer.send('resize-window', {
+          width: target.offsetWidth,
+          height: target.offsetHeight
+        })
+      }
+    })
+
+    observer.observe(containerRef.current)
+
+    return () => {
+      observer.disconnect()
+    }
+  }, [])
 
   const handleContextMenu = (e: React.MouseEvent): void => {
     e.preventDefault()
@@ -179,12 +200,12 @@ function Monitor(): React.JSX.Element {
 
   return (
     <div
+      ref={containerRef}
       onContextMenu={handleContextMenu}
       style={
         {
-          width: '100vw',
-          height: '100vh',
-          display: 'flex',
+          display: 'inline-flex',
+          minWidth: '150px',
           flexDirection: 'column',
           alignItems: 'flex-start',
           justifyContent: 'center',
