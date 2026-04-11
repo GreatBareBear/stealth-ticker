@@ -79,7 +79,12 @@ export function StocksTab(): React.JSX.Element {
       const response = await window.fetch(
         `https://smartbox.gtimg.cn/s3/?v=2&q=${encodeURIComponent(value)}&t=all`
       )
-      const text = await response.text()
+      let text = await response.text()
+
+      // 解析 Unicode 转义字符
+      text = text.replace(/\\u[\dA-F]{4}/gi, (match) =>
+        String.fromCharCode(parseInt(match.replace(/\\u/g, ''), 16))
+      )
 
       if (fetchId !== fetchRef.current) return
 
