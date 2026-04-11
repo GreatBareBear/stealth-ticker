@@ -12,7 +12,7 @@ function Settings(): React.JSX.Element {
   const items = [
     {
       key: '1',
-      label: '关注的股票',
+      label: '自选股票',
       children: <StocksTab />
     },
     {
