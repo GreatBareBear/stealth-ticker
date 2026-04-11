@@ -42,7 +42,7 @@ export function ChartTab(): React.JSX.Element {
   }
 
   return (
-    <div style={{ padding: '0 16px', overflowY: 'auto', maxHeight: '100%' }}>
+    <div style={{ padding: '0 16px' }}>
       <Form 
         form={form} 
         layout="horizontal" 
@@ -82,7 +82,7 @@ export function ChartTab(): React.JSX.Element {
             ]}
           />
         </Form.Item>
-        <Form.Item label="透明度" name="opacity">
+        <Form.Item label="透明度" name="opacity" style={{ marginBottom: 0 }}>
           <Select
             options={[
               { value: '同主界面', label: '同主界面' },

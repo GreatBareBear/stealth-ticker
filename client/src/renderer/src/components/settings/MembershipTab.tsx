@@ -103,7 +103,7 @@ export function MembershipTab(): React.JSX.Element {
         </Col>
       </Row>
 
-      <div style={{ marginTop: 48, textAlign: 'center' }}>
+      <div style={{ marginTop: 24, textAlign: 'center' }}>
         <Text type="secondary">
           <InfoCircleOutlined style={{ marginRight: 8 }} /> 如有支付问题或会员生效延迟，请联系客服
           support@stealth-stock.com

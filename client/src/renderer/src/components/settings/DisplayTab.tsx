@@ -52,7 +52,7 @@ export function DisplayTab(): React.JSX.Element {
   }
 
   return (
-    <div style={{ padding: '0 16px', overflowY: 'auto', maxHeight: '100%' }}>
+    <div style={{ padding: '0 16px' }}>
       <Form
         form={form}
         layout="horizontal"
@@ -184,7 +184,7 @@ export function DisplayTab(): React.JSX.Element {
           <InputNumber min={1} max={3} step={0.1} />
         </Form.Item>
 
-        <Form.Item label="刷新频率 (秒)" name="refreshRate">
+        <Form.Item label="刷新频率 (秒)" name="refreshRate" style={{ marginBottom: 0 }}>
           <InputNumber min={1} max={60} />
           <Text type="secondary" style={{ marginLeft: 8 }}>
             最低 1 秒，推荐 3 秒

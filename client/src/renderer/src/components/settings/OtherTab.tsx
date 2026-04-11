@@ -42,7 +42,7 @@ export function OtherTab(): React.JSX.Element {
   }
 
   return (
-    <div style={{ padding: '0 16px', overflowY: 'auto', maxHeight: '100%' }}>
+    <div style={{ padding: '0 16px' }}>
       <Form 
         form={form} 
         layout="horizontal" 
@@ -54,7 +54,7 @@ export function OtherTab(): React.JSX.Element {
         }}
       >
         <Title level={5}>搜索设置</Title>
-        <Form.Item label="自动搜索模式" name="searchMode" extra="选择本地加密可以提高搜索速度和隐私保护。">
+        <Form.Item label="自动搜索模式" name="searchMode" extra="选择本地加密可以提高搜索速度和隐私保护。" style={{ marginBottom: 0 }}>
           <Segmented
             options={['本地加密', '远程加密']}
           />
