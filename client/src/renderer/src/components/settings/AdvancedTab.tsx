@@ -25,14 +25,8 @@ export function AdvancedTab(): React.JSX.Element {
       try {
         const settings: any = await window.api.store.get('settings')
         if (settings) {
-          let refreshInterval = settings.refreshInterval || '120'
-          if (parseInt(refreshInterval, 10) < 120) {
-            refreshInterval = '120'
-          }
-
           form.setFieldsValue({
             ...settings,
-            refreshInterval,
             bossKey: settings.bossKey || 'X',
             bossKeyModifier: settings.bossKeyModifier || 'CommandOrControl',
             bossKeyAction: settings.bossKeyAction || 'hide'
@@ -52,15 +46,6 @@ export function AdvancedTab(): React.JSX.Element {
     allValues: Record<string, unknown>
   ): Promise<void> => {
     try {
-      if (_changedValues.refreshInterval !== undefined) {
-        const interval = parseInt(_changedValues.refreshInterval as string, 10)
-        if (interval < 120) {
-          message.warning('免费版刷新间隔最低为 120 秒。')
-          form.setFieldsValue({ refreshInterval: '120' })
-          allValues.refreshInterval = '120'
-        }
-      }
-
       const currentSettings: any = (await window.api.store.get('settings')) || {}
 
       let bossKeyCombo = currentSettings.bossKeyCombo
@@ -80,11 +65,6 @@ export function AdvancedTab(): React.JSX.Element {
   const handleReset = async (): Promise<void> => {
     try {
       const defaultSettings = {
-        fontSize: '14',
-        lineHeight: '1.5',
-        backgroundColor: '#000000',
-        opacity: '0.8',
-        refreshInterval: '120',
         bossKeyEnabled: false,
         bossKeyModifier: 'CommandOrControl',
         bossKey: 'X',
@@ -120,11 +100,6 @@ export function AdvancedTab(): React.JSX.Element {
         wrapperCol={{ span: 16 }}
         onValuesChange={handleValuesChange}
         initialValues={{
-          fontSize: '14',
-          lineHeight: '1.5',
-          backgroundColor: '#000000',
-          opacity: '0.8',
-          refreshInterval: '120',
           bossKeyEnabled: false,
           bossKeyModifier: 'CommandOrControl',
           bossKey: 'X',
@@ -133,59 +108,7 @@ export function AdvancedTab(): React.JSX.Element {
           showTrayIcon: true
         }}
       >
-        <Title level={5}>外观与显示</Title>
-
-        <Form.Item label="文字大小" name="fontSize">
-          <Segmented
-            options={[
-              { label: '12', value: '12' },
-              { label: '14', value: '14' },
-              { label: '16', value: '16' },
-              { label: '18', value: '18' },
-              { label: '20', value: '20' },
-              { label: '24', value: '24' }
-            ]}
-          />
-        </Form.Item>
-
-        <Form.Item label="行距" name="lineHeight">
-          <Select style={{ width: 120 }}>
-            <Select.Option value="1">1.0</Select.Option>
-            <Select.Option value="1.2">1.2</Select.Option>
-            <Select.Option value="1.5">1.5</Select.Option>
-            <Select.Option value="1.8">1.8</Select.Option>
-            <Select.Option value="2">2.0</Select.Option>
-          </Select>
-        </Form.Item>
-
-        <Form.Item label="背景颜色" name="backgroundColor">
-          <Input type="color" style={{ width: 60, padding: 0, cursor: 'pointer', height: 32 }} />
-        </Form.Item>
-
-        <Form.Item label="透明度" name="opacity" extra="通过调节透明度，可方便上班使用">
-          <Select style={{ width: 120 }}>
-            <Select.Option value="0.2">20%</Select.Option>
-            <Select.Option value="0.4">40%</Select.Option>
-            <Select.Option value="0.6">60%</Select.Option>
-            <Select.Option value="0.8">80%</Select.Option>
-            <Select.Option value="1">100%</Select.Option>
-          </Select>
-        </Form.Item>
-
-        <Divider />
         <Title level={5}>行为与控制</Title>
-        <Form.Item label="刷新间隔" name="refreshInterval">
-          <Select style={{ width: 120 }}>
-            <Select.Option value="1">1秒</Select.Option>
-            <Select.Option value="3">3秒</Select.Option>
-            <Select.Option value="5">5秒</Select.Option>
-            <Select.Option value="10">10秒</Select.Option>
-            <Select.Option value="30">30秒</Select.Option>
-            <Select.Option value="60">60秒</Select.Option>
-            <Select.Option value="120">120秒</Select.Option>
-          </Select>
-        </Form.Item>
-
         <Form.Item label="总在最前" name="alwaysOnTop">
           <Segmented
             options={[
