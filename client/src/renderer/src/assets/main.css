@@ -14,11 +14,11 @@ body {
 }
 
 .settingsPage .ant-form-item {
-  margin-bottom: 12px !important;
+  margin-bottom: 14px !important;
 }
 
 .settingsPage .ant-tabs-content-holder {
-  padding-top: 12px;
+  padding-top: 14px;
 }
 
 .logo {
