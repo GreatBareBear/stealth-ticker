@@ -97,8 +97,8 @@ export function DashboardTab(): React.JSX.Element {
         <Divider />
 
         <Title level={5}>自定义列</Title>
-        <Form.Item 
-          label="展示列" 
+        <Form.Item
+          label="展示列"
           extra="选择股票展示的列，开启列的多少会影响面板的宽度"
           style={{ marginBottom: 0 }}
         >

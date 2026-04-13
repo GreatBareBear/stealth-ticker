@@ -10,6 +10,46 @@ const store = new StoreClass()
 let tray: Tray | null = null
 let settingsWindow: BrowserWindow | null = null
 let mainWindow: BrowserWindow | null = null
+let aboutWindow: BrowserWindow | null = null
+
+function openAbout(): void {
+  if (aboutWindow) {
+    if (aboutWindow.isMinimized()) aboutWindow.restore()
+    aboutWindow.focus()
+    return
+  }
+
+  aboutWindow = new BrowserWindow({
+    width: 320,
+    height: 400,
+    resizable: false,
+    maximizable: false,
+    minimizable: false,
+    show: false,
+    title: '关于',
+    autoHideMenuBar: true,
+    icon,
+    webPreferences: {
+      preload: join(__dirname, '../preload/index.js'),
+      sandbox: false,
+      webSecurity: false
+    }
+  })
+
+  aboutWindow.on('ready-to-show', () => {
+    aboutWindow?.show()
+  })
+
+  aboutWindow.on('closed', () => {
+    aboutWindow = null
+  })
+
+  if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
+    aboutWindow.loadURL(process.env['ELECTRON_RENDERER_URL'] + '#/about')
+  } else {
+    aboutWindow.loadFile(join(__dirname, '../renderer/index.html'), { hash: 'about' })
+  }
+}
 
 function openSettings(): void {
   if (settingsWindow) {
@@ -56,9 +96,7 @@ function createTray(): void {
     { label: '设置', click: openSettings },
     {
       label: '关于',
-      click: () => {
-        console.log('About clicked')
-      }
+      click: openAbout
     },
     { type: 'separator' },
     {
@@ -184,9 +222,7 @@ app.whenReady().then(() => {
       { label: '设置', click: openSettings },
       {
         label: '关于',
-        click: () => {
-          console.log('About clicked')
-        }
+        click: openAbout
       },
       { type: 'separator' },
       {

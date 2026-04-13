@@ -43,10 +43,10 @@ export function ChartTab(): React.JSX.Element {
 
   return (
     <div style={{ padding: '0 16px' }}>
-      <Form 
-        form={form} 
-        layout="horizontal" 
-        labelCol={{ span: 6 }} 
+      <Form
+        form={form}
+        layout="horizontal"
+        labelCol={{ span: 6 }}
         wrapperCol={{ span: 16 }}
         onValuesChange={handleValuesChange}
         initialValues={{

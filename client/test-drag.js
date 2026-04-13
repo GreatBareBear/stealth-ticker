@@ -1,11 +1,12 @@
-const { app, BrowserWindow, ipcMain } = require('electron');
+const { app, BrowserWindow, ipcMain } = require('electron')
 
 app.whenReady().then(() => {
   const win = new BrowserWindow({
-    width: 300, height: 200,
+    width: 300,
+    height: 200,
     frame: false,
     webPreferences: { nodeIntegration: true, contextIsolation: false }
-  });
+  })
 
   win.loadURL(`data:text/html,
     <html style="user-select:none; height: 100%; background: #ccc;">
@@ -36,12 +37,12 @@ app.whenReady().then(() => {
       </script>
     </body>
     </html>
-  `);
+  `)
 
   ipcMain.on('move-window', (e, { dx, dy }) => {
-    const [x, y] = win.getPosition();
-    win.setPosition(x + dx, y + dy);
-  });
+    const [x, y] = win.getPosition()
+    win.setPosition(x + dx, y + dy)
+  })
 
-  setTimeout(() => app.quit(), 3000);
-});
+  setTimeout(() => app.quit(), 3000)
+})
