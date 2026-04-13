@@ -183,7 +183,6 @@ export function AdvancedTab(): React.JSX.Element {
           </Space>
         </Form.Item>
 
-
         <Form.Item wrapperCol={{ offset: 6, span: 16 }} style={{ marginBottom: 0 }}>
           <Button onClick={handleReset}>一键重置(R)</Button>
         </Form.Item>

@@ -249,11 +249,7 @@ function Monitor(): React.JSX.Element {
         } as React.CSSProperties
       }
     >
-      <div
-        style={
-          { width: '100%' } as React.CSSProperties
-        }
-      >
+      <div style={{ width: '100%' } as React.CSSProperties}>
         {stocks
           .filter((s) => s.visible)
           .map((stock) => {
