@@ -217,7 +217,7 @@ function Monitor(): React.JSX.Element {
     >
       <div
         style={
-          { WebkitAppRegion: 'no-drag', cursor: 'pointer', width: '100%' } as React.CSSProperties
+          { width: '100%' } as React.CSSProperties
         }
       >
         {stocks
