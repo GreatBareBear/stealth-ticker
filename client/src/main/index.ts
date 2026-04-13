@@ -52,16 +52,16 @@ function openSettings(): void {
 function createTray(): void {
   tray = new Tray(icon)
   const contextMenu = Menu.buildFromTemplate([
-    { label: 'Settings', click: openSettings },
+    { label: '设置', click: openSettings },
     {
-      label: 'About',
+      label: '关于',
       click: () => {
         console.log('About clicked')
       }
     },
     { type: 'separator' },
     {
-      label: 'Exit',
+      label: '退出',
       click: () => {
         app.quit()
       }
@@ -76,6 +76,7 @@ function createWindow(): void {
   mainWindow = new BrowserWindow({
     width: 300,
     height: 100,
+    resizable: false,
     show: false,
     frame: false,
     transparent: true,
@@ -170,16 +171,16 @@ app.whenReady().then(() => {
 
   ipcMain.on('show-context-menu', (event) => {
     const template: (Electron.MenuItemConstructorOptions | Electron.MenuItem)[] = [
-      { label: 'Settings', click: openSettings },
+      { label: '设置', click: openSettings },
       {
-        label: 'About',
+        label: '关于',
         click: () => {
           console.log('About clicked')
         }
       },
       { type: 'separator' },
       {
-        label: 'Exit',
+        label: '退出',
         click: () => {
           app.quit()
         }
