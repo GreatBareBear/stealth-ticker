@@ -67,9 +67,8 @@ function Settings(): React.JSX.Element {
       >
         <div
           style={{
-            padding: '16px 24px',
+            padding: '12px 24px 4px 24px',
             background: '#fff',
-            borderBottom: '1px solid #e8e8e8',
             flexShrink: 0
           }}
         >
@@ -81,7 +80,7 @@ function Settings(): React.JSX.Element {
             items={items}
             tabPosition="top"
             animated={{ inkBar: true, tabPane: true }}
-            tabBarStyle={{ padding: '0 24px', marginBottom: 0 }}
+            tabBarStyle={{ padding: '0 24px', margin: 0 }}
           />
         </div>
         <div
