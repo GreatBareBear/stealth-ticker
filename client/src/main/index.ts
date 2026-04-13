@@ -125,9 +125,7 @@ function registerBossKey(settings: any) {
               mainWindow.show()
             }
           }
-          if (settingsWindow && settingsWindow.isVisible()) {
-            settingsWindow.hide()
-          }
+          // Note: according to specs, setting window should remain visible during hide action
         }
       })
     } catch (e) {
