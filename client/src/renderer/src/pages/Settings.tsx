@@ -70,22 +70,14 @@ function Settings(): React.JSX.Element {
           overflow: 'hidden'
         }}
       >
-        <div
-          style={{
-            padding: '12px 24px 8px 24px',
-            background: '#fff',
-            flexShrink: 0
-          }}
-        >
-          <h2 style={{ margin: 0, fontWeight: 'bold', fontSize: '18px' }}>设置</h2>
-        </div>
-        <div style={{ flex: 1, overflowY: 'auto', background: '#fff' }}>
+        <div style={{ flex: 1, overflowY: 'auto', background: '#fff', paddingTop: 8 }}>
           <Tabs
             defaultActiveKey="1"
             items={items}
             tabPosition="top"
             animated={{ inkBar: true, tabPane: true }}
-            tabBarStyle={{ padding: '0 24px', margin: 0, marginTop: '-12px' }}
+            size="small"
+            tabBarStyle={{ padding: '0 24px', margin: 0 }}
           />
         </div>
         <div
