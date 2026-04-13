@@ -80,7 +80,7 @@ export function DashboardTab(): React.JSX.Element {
   }
 
   return (
-    <div style={{ padding: '0 16px', overflowY: 'auto', maxHeight: '100%' }}>
+    <div style={{ padding: '0 16px' }}>
       <Form layout="horizontal" labelCol={{ span: 6 }} wrapperCol={{ span: 16 }}>
         <Title level={5}>大盘设置</Title>
         <Form.Item label="是否显示顶部大盘">
@@ -100,6 +100,7 @@ export function DashboardTab(): React.JSX.Element {
         <Form.Item 
           label="展示列" 
           extra="选择股票展示的列，开启列的多少会影响面板的宽度"
+          style={{ marginBottom: 0 }}
         >
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
             {COLUMN_OPTIONS.map((option) => (

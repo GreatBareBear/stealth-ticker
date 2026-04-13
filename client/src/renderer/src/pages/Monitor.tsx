@@ -23,6 +23,7 @@ interface Settings {
   changeFormat?: 'red-green' | 'black' | 'none' | 'custom'
   bgColor?: string
   customColor?: string
+  enableContextMenu?: boolean
 }
 
 interface StockData {
@@ -43,7 +44,8 @@ const DEFAULT_SETTINGS: Settings = {
   showHighLow: false,
   fontSize: 'medium',
   lineHeight: 1.5,
-  refreshRate: 3
+  refreshRate: 3,
+  enableContextMenu: true
 }
 
 const DEFAULT_STOCKS: Stock[] = [
@@ -80,6 +82,7 @@ function Monitor(): React.JSX.Element {
 
   const handleContextMenu = (e: React.MouseEvent): void => {
     e.preventDefault()
+    if (settings.enableContextMenu === false) return
     window.electron.ipcRenderer.send('show-context-menu')
   }
 
@@ -177,22 +180,10 @@ function Monitor(): React.JSX.Element {
   }
 
   const getBackgroundColor = () => {
-    const opacity = (settings.opacity ?? 80) / 100
     if (settings.bgColor) {
-      const hexMatch = settings.bgColor.match(/^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})$/)
-      if (hexMatch) {
-        let hex = hexMatch[1]
-        if (hex.length === 3) {
-          hex = hex.split('').map((char) => char + char).join('')
-        }
-        const r = parseInt(hex.slice(0, 2), 16)
-        const g = parseInt(hex.slice(2, 4), 16)
-        const b = parseInt(hex.slice(4, 6), 16)
-        return `rgba(${r}, ${g}, ${b}, ${opacity})`
-      }
       return settings.bgColor
     }
-    return settings.theme ? `rgba(0, 0, 0, ${opacity})` : `rgba(255, 255, 255, ${opacity})`
+    return settings.theme ? '#000000' : '#ffffff'
   }
 
   const bgColor = getBackgroundColor()
@@ -211,6 +202,7 @@ function Monitor(): React.JSX.Element {
           justifyContent: 'center',
           color: defaultTextColor,
           backgroundColor: bgColor,
+          opacity: (settings.opacity ?? 80) / 100,
           WebkitAppRegion: 'drag',
           userSelect: 'none',
           borderRadius: '8px',

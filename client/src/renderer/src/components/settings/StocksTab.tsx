@@ -245,7 +245,7 @@ export function StocksTab(): React.JSX.Element {
         pagination={false}
         size="small"
         rowKey="key"
-        scroll={{ y: 400 }}
+        scroll={{ y: 340 }}
       />
     </div>
   )

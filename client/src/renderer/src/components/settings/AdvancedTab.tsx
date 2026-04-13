@@ -71,7 +71,8 @@ export function AdvancedTab(): React.JSX.Element {
         bossKeyAction: 'hide',
         bossKeyCombo: 'CommandOrControl+X',
         alwaysOnTop: true,
-        showTrayIcon: true
+        showTrayIcon: true,
+        enableContextMenu: true
       }
       form.setFieldsValue(defaultSettings)
       const currentSettings = (await window.api.store.get('settings')) || {}
@@ -92,7 +93,7 @@ export function AdvancedTab(): React.JSX.Element {
   }
 
   return (
-    <div style={{ padding: '0 16px', overflowY: 'auto', maxHeight: '100%' }}>
+    <div style={{ padding: '0 16px' }}>
       <Form
         form={form}
         layout="horizontal"
@@ -105,7 +106,8 @@ export function AdvancedTab(): React.JSX.Element {
           bossKey: 'X',
           bossKeyAction: 'hide',
           alwaysOnTop: true,
-          showTrayIcon: true
+          showTrayIcon: true,
+          enableContextMenu: true
         }}
       >
         <Title level={5}>行为与控制</Title>
@@ -119,6 +121,15 @@ export function AdvancedTab(): React.JSX.Element {
         </Form.Item>
 
         <Form.Item label="显示通知区图标" name="showTrayIcon">
+          <Segmented
+            options={[
+              { label: '开启', value: true },
+              { label: '关闭', value: false }
+            ]}
+          />
+        </Form.Item>
+
+        <Form.Item label="开启页面右键" name="enableContextMenu">
           <Segmented
             options={[
               { label: '开启', value: true },
@@ -162,7 +173,7 @@ export function AdvancedTab(): React.JSX.Element {
         </Form.Item>
 
 
-        <Form.Item wrapperCol={{ offset: 6, span: 16 }}>
+        <Form.Item wrapperCol={{ offset: 6, span: 16 }} style={{ marginBottom: 0 }}>
           <Button onClick={handleReset}>一键重置(R)</Button>
         </Form.Item>
       </Form>

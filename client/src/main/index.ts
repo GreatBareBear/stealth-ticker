@@ -19,8 +19,11 @@ function openSettings(): void {
   }
 
   settingsWindow = new BrowserWindow({
-    width: 600,
-    height: 500,
+    width: 650,
+    height: 600,
+    resizable: false,
+    maximizable: false,
+    minimizable: false,
     show: false,
     autoHideMenuBar: true,
     ...(process.platform === 'linux' ? { icon } : {}),

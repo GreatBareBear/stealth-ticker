@@ -81,7 +81,6 @@ function Settings(): React.JSX.Element {
             items={items}
             tabPosition="top"
             animated={{ inkBar: true, tabPane: true }}
-            style={{ height: '100%' }}
             tabBarStyle={{ padding: '0 24px', marginBottom: 0 }}
           />
         </div>
