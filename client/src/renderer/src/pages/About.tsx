@@ -27,7 +27,6 @@ function About(): React.JSX.Element {
           overflow: 'hidden'
         }}
       >
-        {/* Top Area: Icon, App Name, Version */}
         <div style={{ display: 'flex', alignItems: 'center', marginBottom: 24 }}>
           <img
             src={icon}
@@ -44,7 +43,6 @@ function About(): React.JSX.Element {
           </div>
         </div>
 
-        {/* Middle Area: Copyright and Info */}
         <div style={{ flex: 1, overflowY: 'auto' }}>
           <Space direction="vertical" size="small">
             <Text>版权所有 © Xue Maogang 2025 - 2026. All rights reserved.</Text>
@@ -55,12 +53,10 @@ function About(): React.JSX.Element {
           </Space>
         </div>
 
-        {/* Bottom Area: Divider, Readonly Inputs, Check Update Button */}
         <div style={{ flexShrink: 0 }}>
           <Divider style={{ margin: '16px 0' }} />
 
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
-            {/* Contact Info Readonly Inputs */}
             <div style={{ flex: 1, marginRight: 32 }}>
               <Space direction="vertical" size="small" style={{ width: '100%' }}>
                 <div style={{ display: 'flex', alignItems: 'center' }}>
@@ -78,7 +74,6 @@ function About(): React.JSX.Element {
               </Space>
             </div>
 
-            {/* Check Update Button */}
             <Button type="primary" size="middle" style={{ marginBottom: '2px' }}>
               检查更新
             </Button>
