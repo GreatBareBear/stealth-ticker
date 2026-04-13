@@ -62,6 +62,7 @@ function Settings(): React.JSX.Element {
       }}
     >
       <div
+        className="settingsPage"
         style={{
           height: '100vh',
           display: 'flex',

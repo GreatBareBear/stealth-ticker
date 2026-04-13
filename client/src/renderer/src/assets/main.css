@@ -13,6 +13,14 @@ body {
   height: 100vh;
 }
 
+.settingsPage .ant-form-item {
+  margin-bottom: 12px !important;
+}
+
+.settingsPage .ant-tabs-content-holder {
+  padding-top: 12px;
+}
+
 .logo {
   margin-bottom: 20px;
   -webkit-user-drag: none;
