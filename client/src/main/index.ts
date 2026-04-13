@@ -196,6 +196,14 @@ app.whenReady().then(() => {
     if (win) win.setSize(Math.ceil(width), Math.ceil(height))
   })
 
+  ipcMain.on('drag-window', (event, { deltaX, deltaY }) => {
+    const win = BrowserWindow.fromWebContents(event.sender)
+    if (win) {
+      const [x, y] = win.getPosition()
+      win.setPosition(x + deltaX, y + deltaY)
+    }
+  })
+
   createTray()
   createWindow()
 
