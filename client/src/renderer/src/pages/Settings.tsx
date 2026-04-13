@@ -53,6 +53,11 @@ function Settings(): React.JSX.Element {
         token: {
           colorPrimary: '#1677ff',
           borderRadius: 8
+        },
+        components: {
+          Tabs: {
+            horizontalMargin: '0 0 0 0'
+          }
         }
       }}
     >
@@ -67,7 +72,7 @@ function Settings(): React.JSX.Element {
       >
         <div
           style={{
-            padding: '12px 24px 4px 24px',
+            padding: '12px 24px 0px 24px',
             background: '#fff',
             flexShrink: 0
           }}
