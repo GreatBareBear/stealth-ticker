@@ -54,6 +54,12 @@ const DEFAULT_STOCKS: Stock[] = [
   { key: '3', symbol: 'sz000001', name: '平安银行', isIndex: false, visible: true }
 ]
 
+function normalizeOpacity(value: unknown): number {
+  const num = typeof value === 'number' ? value : Number(value)
+  if (!Number.isFinite(num)) return 80
+  return Math.min(100, Math.max(1, num))
+}
+
 function Monitor(): React.JSX.Element {
   const [stocks, setStocks] = useState<Stock[]>([])
   const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS)
@@ -231,7 +237,7 @@ function Monitor(): React.JSX.Element {
           justifyContent: 'center',
           color: defaultTextColor,
           backgroundColor: bgColor,
-          opacity: (settings.opacity ?? 80) / 100,
+          opacity: normalizeOpacity(settings.opacity ?? 80) / 100,
           userSelect: 'none',
           borderRadius: '8px',
           overflow: 'hidden',

@@ -95,7 +95,7 @@ export function DisplayTab(): React.JSX.Element {
         </Form.Item>
 
         <Form.Item label="悬浮窗透明度" name="opacity" extra="通过调节透明度，可方便上班使用">
-          <Slider min={10} max={100} marks={{ 10: '透明', 100: '不透明' }} />
+          <Slider min={1} max={100} marks={{ 1: '透明', 100: '不透明' }} />
         </Form.Item>
 
         <Form.Item
