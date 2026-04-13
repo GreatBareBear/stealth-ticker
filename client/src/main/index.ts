@@ -81,13 +81,14 @@ function createWindow(): void {
     height: 100,
     resizable: false,
     show: false,
+    title: 'stealth-ticker',
     frame: false,
     transparent: true,
     alwaysOnTop: true,
     hasShadow: false,
     autoHideMenuBar: true,
     skipTaskbar: settings.ghostMode !== false,
-    ...(process.platform === 'linux' ? { icon } : {}),
+    icon,
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
       sandbox: false,
@@ -97,6 +98,10 @@ function createWindow(): void {
 
   mainWindow.on('ready-to-show', () => {
     mainWindow?.show()
+  })
+
+  mainWindow.on('page-title-updated', (e) => {
+    e.preventDefault()
   })
 
   mainWindow.webContents.setWindowOpenHandler((details) => {
