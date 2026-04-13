@@ -57,7 +57,7 @@ const DEFAULT_STOCKS: Stock[] = [
 function normalizeOpacity(value: unknown): number {
   const num = typeof value === 'number' ? value : Number(value)
   if (!Number.isFinite(num)) return 80
-  return Math.min(100, Math.max(0, num))
+  return Math.min(100, Math.max(1, num))
 }
 
 function Monitor(): React.JSX.Element {
