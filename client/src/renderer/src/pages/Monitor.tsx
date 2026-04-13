@@ -59,6 +59,32 @@ function Monitor(): React.JSX.Element {
   const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS)
   const [stockData, setStockData] = useState<Record<string, StockData>>({})
   const containerRef = useRef<HTMLDivElement>(null)
+  const [isDragging, setIsDragging] = useState(false)
+  const dragPosRef = useRef({ x: 0, y: 0 })
+
+  const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (e.button === 0) {
+      e.currentTarget.setPointerCapture(e.pointerId)
+      setIsDragging(true)
+      dragPosRef.current = { x: e.screenX, y: e.screenY }
+    }
+  }
+
+  const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (isDragging) {
+      const deltaX = e.screenX - dragPosRef.current.x
+      const deltaY = e.screenY - dragPosRef.current.y
+      dragPosRef.current = { x: e.screenX, y: e.screenY }
+      window.electron.ipcRenderer.send('drag-window', { deltaX, deltaY })
+    }
+  }
+
+  const handlePointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (e.button === 0) {
+      e.currentTarget.releasePointerCapture(e.pointerId)
+      setIsDragging(false)
+    }
+  }
 
   useLayoutEffect(() => {
     if (!containerRef.current) return
@@ -193,6 +219,9 @@ function Monitor(): React.JSX.Element {
     <div
       ref={containerRef}
       onContextMenu={handleContextMenu}
+      onPointerDown={handlePointerDown}
+      onPointerMove={handlePointerMove}
+      onPointerUp={handlePointerUp}
       style={
         {
           display: 'inline-flex',
@@ -203,7 +232,6 @@ function Monitor(): React.JSX.Element {
           color: defaultTextColor,
           backgroundColor: bgColor,
           opacity: (settings.opacity ?? 80) / 100,
-          WebkitAppRegion: 'drag',
           userSelect: 'none',
           borderRadius: '8px',
           overflow: 'hidden',
