@@ -1,7 +1,0 @@
-- [x] 原始的 `client/spec.md` 等初始文档已移动到 `.trae/specs/client/init/` 中。
-- [x] `.trae/specs/dynamic-window-resize` 已被移动至 `.trae/specs/client/`。
-- [x] `.trae/specs/fix-monitor-display-issues` 已被移动至 `.trae/specs/client/`。
-- [x] `.trae/specs/refine-advanced-settings-and-opacity` 已被移动至 `.trae/specs/client/`。
-- [x] `.trae/specs/refine-settings-tabs` 已被移动至 `.trae/specs/client/`。
-- [x] `.trae/specs/refine-ui-from-reference` 已被移动至 `.trae/specs/client/`。
-- [x] `.trae/specs/` 根目录结构整洁，无多余的属于客户端的修改目录。
