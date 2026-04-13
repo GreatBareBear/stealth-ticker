@@ -57,6 +57,11 @@ function Settings(): React.JSX.Element {
         components: {
           Tabs: {
             horizontalMargin: '0 0 0 0'
+          },
+          Segmented: {
+            itemSelectedBg: '#e6f4ff',
+            itemSelectedColor: '#1677ff',
+            trackBg: 'rgba(0,0,0,0.06)'
           }
         }
       }}
