@@ -1,5 +1,5 @@
 import React from 'react'
-import { Tabs, ConfigProvider } from 'antd'
+import { Tabs, ConfigProvider, Button } from 'antd'
 import { StocksTab } from '../components/settings/StocksTab'
 import { DisplayTab } from '../components/settings/DisplayTab'
 import { AdvancedTab } from '../components/settings/AdvancedTab'
@@ -95,29 +95,25 @@ function Settings(): React.JSX.Element {
             flexShrink: 0
           }}
         >
-          <button
+          <Button
+            onClick={() => window.close()}
             style={{
               padding: '4px 16px',
-              borderRadius: '6px',
-              border: '1px solid #d9d9d9',
-              background: '#fff',
-              cursor: 'pointer'
+              borderRadius: '6px'
             }}
           >
             取消
-          </button>
-          <button
+          </Button>
+          <Button
+            type="primary"
+            onClick={() => window.close()}
             style={{
               padding: '4px 16px',
-              borderRadius: '6px',
-              border: 'none',
-              background: '#1677ff',
-              color: '#fff',
-              cursor: 'pointer'
+              borderRadius: '6px'
             }}
           >
             确定
-          </button>
+          </Button>
         </div>
       </div>
     </ConfigProvider>
