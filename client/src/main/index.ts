@@ -25,6 +25,7 @@ function openSettings(): void {
     maximizable: false,
     minimizable: false,
     show: false,
+    title: '设置',
     autoHideMenuBar: true,
     ...(process.platform === 'linux' ? { icon } : {}),
     webPreferences: {
