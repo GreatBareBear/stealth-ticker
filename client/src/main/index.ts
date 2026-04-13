@@ -68,11 +68,13 @@ function createTray(): void {
       }
     }
   ] as (Electron.MenuItemConstructorOptions | Electron.MenuItem)[])
-  tray.setToolTip('Stealth Stock Monitor')
+  tray.setToolTip('stealth-ticker')
   tray.setContextMenu(contextMenu)
 }
 
 function createWindow(): void {
+  const settings: any = store.get('settings') || {}
+
   // Create the browser window.
   mainWindow = new BrowserWindow({
     width: 300,
@@ -84,6 +86,7 @@ function createWindow(): void {
     alwaysOnTop: true,
     hasShadow: false,
     autoHideMenuBar: true,
+    skipTaskbar: settings.ghostMode !== false,
     ...(process.platform === 'linux' ? { icon } : {}),
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
@@ -161,6 +164,9 @@ app.whenReady().then(() => {
     store.set(key, value)
     if (key === 'settings') {
       registerBossKey(value)
+      if (mainWindow) {
+        mainWindow.setSkipTaskbar(value.ghostMode !== false)
+      }
     }
   })
 

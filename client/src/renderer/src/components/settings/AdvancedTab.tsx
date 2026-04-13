@@ -72,7 +72,8 @@ export function AdvancedTab(): React.JSX.Element {
         bossKeyCombo: 'CommandOrControl+X',
         alwaysOnTop: true,
         showTrayIcon: true,
-        enableContextMenu: true
+        enableContextMenu: true,
+        ghostMode: true
       }
       form.setFieldsValue(defaultSettings)
       const currentSettings = (await window.api.store.get('settings')) || {}
@@ -107,10 +108,20 @@ export function AdvancedTab(): React.JSX.Element {
           bossKeyAction: 'hide',
           alwaysOnTop: true,
           showTrayIcon: true,
-          enableContextMenu: true
+          enableContextMenu: true,
+          ghostMode: true
         }}
       >
         <Title level={5}>行为与控制</Title>
+        <Form.Item label="幽灵模式" name="ghostMode">
+          <Segmented
+            options={[
+              { label: '开启', value: true },
+              { label: '关闭', value: false }
+            ]}
+          />
+        </Form.Item>
+
         <Form.Item label="总在最前" name="alwaysOnTop">
           <Segmented
             options={[
