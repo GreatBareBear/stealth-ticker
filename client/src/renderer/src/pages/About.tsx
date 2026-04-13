@@ -1,6 +1,6 @@
 import React from 'react'
 import { Button, Divider, Input, Typography, Space, ConfigProvider } from 'antd'
-import icon from '../../../../../resources/icon.png'
+import icon from '../../../../resources/icon.png'
 
 const { Title, Text } = Typography
 
