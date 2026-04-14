@@ -1,6 +1,6 @@
 import React from 'react'
 import { Button, Divider, Input, Typography, Space, ConfigProvider } from 'antd'
-import icon from '../../../../../resources/icon.png'
+import icon from '../../../../resources/icon.png'
 
 const { Title, Text } = Typography
 
@@ -27,7 +27,6 @@ function About(): React.JSX.Element {
           overflow: 'hidden'
         }}
       >
-        {/* Top Area: Icon, App Name, Version */}
         <div style={{ display: 'flex', alignItems: 'center', marginBottom: 24 }}>
           <img
             src={icon}
@@ -55,7 +54,6 @@ function About(): React.JSX.Element {
           </Space>
         </div>
 
-        {/* Bottom Area: Divider, Readonly Inputs, Check Update Button */}
         <div style={{ flexShrink: 0 }}>
           <Divider style={{ margin: '16px 0' }} />
 
