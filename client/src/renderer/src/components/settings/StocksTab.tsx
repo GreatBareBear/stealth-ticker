@@ -1,6 +1,22 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { Table, Button, Popconfirm, Switch, message, Select, Spin } from 'antd'
 import { PlusOutlined, DeleteOutlined, DragOutlined } from '@ant-design/icons'
+import {
+  DndContext,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+  closestCenter
+} from '@dnd-kit/core'
+import { restrictToVerticalAxis } from '@dnd-kit/modifiers'
+import {
+  SortableContext,
+  arrayMove,
+  useSortable,
+  verticalListSortingStrategy
+} from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
 
 export interface Stock {
   key: string
@@ -20,6 +36,61 @@ export interface OptionType {
   value: string
   label: string
   data: OptionData
+}
+
+interface RowContextProps {
+  setActivatorNodeRef?: (element: HTMLElement | null) => void
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  listeners?: Record<string, any>
+}
+
+const RowContext = React.createContext<RowContextProps>({})
+
+const DragHandle: React.FC = () => {
+  const { setActivatorNodeRef, listeners } = React.useContext(RowContext)
+  return (
+    <DragOutlined
+      ref={setActivatorNodeRef}
+      style={{ cursor: 'grab', color: '#999' }}
+      {...listeners}
+    />
+  )
+}
+
+interface RowProps extends React.HTMLAttributes<HTMLTableRowElement> {
+  'data-row-key': string
+}
+
+const Row = (props: RowProps): React.JSX.Element => {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    setActivatorNodeRef,
+    transform,
+    transition,
+    isDragging
+  } = useSortable({
+    id: props['data-row-key']
+  })
+
+  const style: React.CSSProperties = {
+    ...props.style,
+    transform: CSS.Transform.toString(transform && { ...transform, scaleY: 1 }),
+    transition,
+    ...(isDragging ? { position: 'relative', zIndex: 9999 } : {})
+  }
+
+  const contextValue = React.useMemo<RowContextProps>(
+    () => ({ setActivatorNodeRef, listeners }),
+    [setActivatorNodeRef, listeners]
+  )
+
+  return (
+    <RowContext.Provider value={contextValue}>
+      <tr {...props} ref={setNodeRef} style={style} {...attributes} />
+    </RowContext.Provider>
+  )
 }
 
 export function StocksTab(): React.JSX.Element {
@@ -162,12 +233,30 @@ export function StocksTab(): React.JSX.Element {
     updateStocks(stocks.map((s) => (s.key === key ? { ...s, visible: checked } : s)))
   }
 
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 1
+      }
+    })
+  )
+
+  const onDragEnd = (event: DragEndEvent): void => {
+    const { active, over } = event
+    if (active.id !== over?.id) {
+      const activeIndex = stocks.findIndex((i) => i.key === active.id)
+      const overIndex = stocks.findIndex((i) => i.key === over?.id)
+      const newStocks = arrayMove(stocks, activeIndex, overIndex)
+      updateStocks(newStocks)
+    }
+  }
+
   const columns = [
     {
       title: '',
       key: 'drag',
       width: 40,
-      render: (): React.JSX.Element => <DragOutlined style={{ cursor: 'grab', color: '#999' }} />
+      render: (): React.JSX.Element => <DragHandle />
     },
     {
       title: '代码',
@@ -239,14 +328,28 @@ export function StocksTab(): React.JSX.Element {
           添加
         </Button>
       </div>
-      <Table
-        dataSource={stocks}
-        columns={columns}
-        pagination={false}
-        size="small"
-        rowKey="key"
-        scroll={{ y: 340 }}
-      />
+      <DndContext
+        sensors={sensors}
+        modifiers={[restrictToVerticalAxis]}
+        onDragEnd={onDragEnd}
+        collisionDetection={closestCenter}
+      >
+        <SortableContext items={stocks.map((i) => i.key)} strategy={verticalListSortingStrategy}>
+          <Table
+            components={{
+              body: {
+                row: Row
+              }
+            }}
+            dataSource={stocks}
+            columns={columns}
+            pagination={false}
+            size="small"
+            rowKey="key"
+            scroll={{ y: 340 }}
+          />
+        </SortableContext>
+      </DndContext>
     </div>
   )
 }
