@@ -21,7 +21,7 @@ function openAbout(): void {
 
   aboutWindow = new BrowserWindow({
     width: 320,
-    height: 400,
+    height: 460,
     resizable: false,
     maximizable: false,
     minimizable: false,
