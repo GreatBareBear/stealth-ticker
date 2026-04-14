@@ -21,13 +21,13 @@ function About(): React.JSX.Element {
           display: 'flex',
           flexDirection: 'column',
           height: '100vh',
-          padding: '24px',
+          padding: '16px 24px',
           background: '#fff',
           boxSizing: 'border-box',
           overflow: 'hidden'
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', marginBottom: 24 }}>
+        <div style={{ display: 'flex', alignItems: 'center', marginBottom: 16 }}>
           <img
             src={icon}
             alt="App Logo"
@@ -55,11 +55,11 @@ function About(): React.JSX.Element {
         </div>
 
         <div style={{ flexShrink: 0 }}>
-          <Divider style={{ margin: '16px 0' }} />
+          <Divider style={{ margin: '12px 0' }} />
 
           <div style={{ display: 'flex', flexDirection: 'column' }}>
             {/* Contact Info Readonly Inputs */}
-            <div style={{ width: '100%', marginBottom: 16 }}>
+            <div style={{ width: '100%', marginBottom: 12 }}>
               <Space direction="vertical" size="small" style={{ width: '100%' }}>
                 <div style={{ display: 'flex', alignItems: 'center', width: '100%' }}>
                   <Text style={{ width: 60, flexShrink: 0 }}>Home:</Text>
@@ -70,7 +70,7 @@ function About(): React.JSX.Element {
                   <Input readOnly value="43757098@qq.com" style={{ flex: 1, minWidth: 0 }} />
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', width: '100%' }}>
-                  <Text style={{ width: 60, flexShrink: 0 }}>QQ群:</Text>
+                  <Text style={{ width: 60, flexShrink: 0 }}>QQ 群:</Text>
                   <Input readOnly value="43757098" style={{ flex: 1, minWidth: 0 }} />
                 </div>
               </Space>
