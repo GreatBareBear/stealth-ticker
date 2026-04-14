@@ -66,9 +66,27 @@ function Monitor(): React.JSX.Element {
   const [stockData, setStockData] = useState<Record<string, StockData>>({})
   const containerRef = useRef<HTMLDivElement>(null)
   const [isDragging, setIsDragging] = useState(false)
+  const [isLocked, setIsLocked] = useState(false)
+  const [isWindowHidden, setIsWindowHidden] = useState(false)
   const dragPosRef = useRef({ x: 0, y: 0 })
 
+  useEffect(() => {
+    const handleLock = (_event: any, locked: boolean) => {
+      setIsLocked(locked)
+      if (locked) {
+        setIsDragging(false)
+      }
+    }
+
+    window.electron.ipcRenderer.on('window-locked', handleLock)
+    
+    return () => {
+      window.electron.ipcRenderer.removeListener('window-locked', handleLock)
+    }
+  }, [])
+
   const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (isLocked) return
     if (e.button === 0) {
       e.currentTarget.setPointerCapture(e.pointerId)
       setIsDragging(true)
@@ -77,6 +95,7 @@ function Monitor(): React.JSX.Element {
   }
 
   const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (isLocked) return
     if (isDragging) {
       const deltaX = e.screenX - dragPosRef.current.x
       const deltaY = e.screenY - dragPosRef.current.y
@@ -86,6 +105,7 @@ function Monitor(): React.JSX.Element {
   }
 
   const handlePointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (isLocked) return
     if (e.button === 0) {
       e.currentTarget.releasePointerCapture(e.pointerId)
       setIsDragging(false)
@@ -114,11 +134,12 @@ function Monitor(): React.JSX.Element {
 
   const handleContextMenu = (e: React.MouseEvent): void => {
     e.preventDefault()
+    if (isLocked) return
     if (settings.enableContextMenu === false) return
     window.electron.ipcRenderer.send('show-context-menu')
   }
 
-  const loadConfigAndData = async (): Promise<void> => {
+  const loadConfigAndData = React.useCallback(async (): Promise<void> => {
     try {
       const storeSettings = await window.api.store.get('settings')
       const currentSettings = { ...DEFAULT_SETTINGS, ...(storeSettings || {}) }
@@ -167,7 +188,7 @@ function Monitor(): React.JSX.Element {
     } catch (error) {
       console.error('Failed to fetch stock data', error)
     }
-  }
+  }, [])
 
   useEffect(() => {
     // eslint-disable-next-line
@@ -175,12 +196,30 @@ function Monitor(): React.JSX.Element {
   }, [])
 
   useEffect(() => {
+    const handleHidden = () => setIsWindowHidden(true)
+    const handleShown = () => {
+      setIsWindowHidden(false)
+      loadConfigAndData()
+    }
+
+    window.electron.ipcRenderer.on('window-hidden', handleHidden)
+    window.electron.ipcRenderer.on('window-shown', handleShown)
+
+    return () => {
+      window.electron.ipcRenderer.removeListener('window-hidden', handleHidden)
+      window.electron.ipcRenderer.removeListener('window-shown', handleShown)
+    }
+  }, [loadConfigAndData])
+
+  useEffect(() => {
+    if (isWindowHidden) return
+
     const rate = settings.refreshRate || 3
     const interval = setInterval(() => {
       loadConfigAndData()
     }, rate * 1000)
     return () => clearInterval(interval)
-  }, [settings.refreshRate])
+  }, [settings.refreshRate, isWindowHidden, loadConfigAndData])
 
   const getFontSize = (): string => {
     switch (settings.fontSize) {
@@ -239,6 +278,7 @@ function Monitor(): React.JSX.Element {
           backgroundColor: bgColor,
           opacity: normalizeOpacity(settings.opacity ?? 80) / 100,
           userSelect: 'none',
+          cursor: isLocked ? 'default' : 'move',
           borderRadius: '8px',
           overflow: 'hidden',
           fontFamily: 'monospace',

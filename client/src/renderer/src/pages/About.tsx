@@ -1,5 +1,5 @@
 import React from 'react'
-import { Button, Divider, Input, Typography, Space, ConfigProvider } from 'antd'
+import { Button, Divider, Typography, Space, ConfigProvider } from 'antd'
 import icon from '../../../../resources/icon.png'
 
 const { Title, Text } = Typography
@@ -63,15 +63,15 @@ function About(): React.JSX.Element {
               <Space direction="vertical" size="small" style={{ width: '100%' }}>
                 <div style={{ display: 'flex', alignItems: 'center', width: '100%' }}>
                   <Text style={{ width: 60, flexShrink: 0 }}>Home:</Text>
-                  <Input readOnly value="www.ipv8.com" style={{ flex: 1, minWidth: 0 }} />
+                  <Text copyable style={{ flex: 1, minWidth: 0 }}>www.ipv8.com</Text>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', width: '100%' }}>
                   <Text style={{ width: 60, flexShrink: 0 }}>E-mail:</Text>
-                  <Input readOnly value="43757098@qq.com" style={{ flex: 1, minWidth: 0 }} />
+                  <Text copyable style={{ flex: 1, minWidth: 0 }}>43757098@qq.com</Text>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', width: '100%' }}>
                   <Text style={{ width: 60, flexShrink: 0 }}>QQ 群:</Text>
-                  <Input readOnly value="43757098" style={{ flex: 1, minWidth: 0 }} />
+                  <Text copyable style={{ flex: 1, minWidth: 0 }}>43757098</Text>
                 </div>
               </Space>
             </div>

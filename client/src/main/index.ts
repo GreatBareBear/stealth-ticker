@@ -93,6 +93,19 @@ function openSettings(): void {
 function createTray(): void {
   tray = new Tray(icon)
   const contextMenu = Menu.buildFromTemplate([
+    {
+      label: '锁定面板',
+      type: 'checkbox',
+      checked: false,
+      click: (menuItem) => {
+        const locked = menuItem.checked
+        if (mainWindow) {
+          mainWindow.setIgnoreMouseEvents(locked, { forward: true })
+          mainWindow.webContents.send('window-locked', locked)
+        }
+      }
+    },
+    { type: 'separator' },
     { label: '设置', click: openSettings },
     {
       label: '关于',
@@ -168,8 +181,10 @@ function registerBossKey(settings: any) {
           if (mainWindow) {
             if (mainWindow.isVisible()) {
               mainWindow.hide()
+              mainWindow.webContents.send('window-hidden')
             } else {
               mainWindow.show()
+              mainWindow.webContents.send('window-shown')
             }
           }
           // Note: according to specs, setting window should remain visible during hide action

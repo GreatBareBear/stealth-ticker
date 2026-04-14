@@ -1,5 +1,5 @@
 import React from 'react'
-import { Tabs, ConfigProvider, Button } from 'antd'
+import { Tabs, ConfigProvider } from 'antd'
 import { StocksTab } from '../components/settings/StocksTab'
 import { DisplayTab } from '../components/settings/DisplayTab'
 import { AdvancedTab } from '../components/settings/AdvancedTab'
@@ -85,37 +85,6 @@ function Settings(): React.JSX.Element {
             size="small"
             tabBarStyle={{ padding: '0 24px', margin: 0 }}
           />
-        </div>
-        <div
-          style={{
-            padding: '12px 24px',
-            background: '#fff',
-            borderTop: '1px solid #e8e8e8',
-            display: 'flex',
-            justifyContent: 'flex-end',
-            gap: '12px',
-            flexShrink: 0
-          }}
-        >
-          <Button
-            onClick={() => window.close()}
-            style={{
-              padding: '4px 16px',
-              borderRadius: '6px'
-            }}
-          >
-            取消
-          </Button>
-          <Button
-            type="primary"
-            onClick={() => window.close()}
-            style={{
-              padding: '4px 16px',
-              borderRadius: '6px'
-            }}
-          >
-            确定
-          </Button>
         </div>
       </div>
     </ConfigProvider>
