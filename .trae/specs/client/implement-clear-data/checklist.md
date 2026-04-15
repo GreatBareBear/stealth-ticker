@@ -1,0 +1,3 @@
+- [x] “其它”页新增“数据与隐私”区域与“一键清理数据”按钮，且存在二次确认
+- [x] 点击确认后能删除预期 keys（stocks/alerts/alertsGlobalPaused/免打扰相关 keys）
+- [x] `npm -C client run typecheck:web` 通过
