@@ -430,6 +430,7 @@ export function StocksTab(): React.JSX.Element {
 
       <Modal
         title="预警设置"
+        width={400}
         open={isAlertModalVisible}
         onOk={handleAlertModalOk}
         onCancel={handleAlertModalCancel}
@@ -458,43 +459,47 @@ export function StocksTab(): React.JSX.Element {
         ]}
       >
         <Form form={form} layout="vertical">
-          <Form.Item label="预警类型" name="type" rules={[{ required: true }]}>
-            <Radio.Group>
-              <Radio.Button value="price">价格</Radio.Button>
-              <Radio.Button value="percent">涨跌幅</Radio.Button>
-            </Radio.Group>
+          <Form.Item label="触发条件" style={{ marginBottom: 12 }}>
+            <Space.Compact style={{ width: '100%' }}>
+              <Form.Item name="type" noStyle rules={[{ required: true }]}>
+                <Select style={{ width: 90 }}>
+                  <Select.Option value="price">价格</Select.Option>
+                  <Select.Option value="percent">涨跌幅</Select.Option>
+                </Select>
+              </Form.Item>
+
+              <Form.Item name="condition" noStyle rules={[{ required: true }]}>
+                <Select style={{ width: 80 }}>
+                  <Select.Option value="above">高于</Select.Option>
+                  <Select.Option value="below">低于</Select.Option>
+                </Select>
+              </Form.Item>
+
+              <Form.Item
+                noStyle
+                shouldUpdate={(prevValues, currentValues) => prevValues.type !== currentValues.type}
+              >
+                {({ getFieldValue }): React.ReactNode => {
+                  const type = getFieldValue('type')
+                  return (
+                    <Form.Item name="threshold" noStyle rules={[{ required: true, message: '请输入阈值' }]}>
+                      {type === 'price' ? (
+                        <InputNumber style={{ width: 'calc(100% - 170px)' }} precision={2} placeholder="目标价格" />
+                      ) : (
+                        <InputNumber style={{ width: 'calc(100% - 170px)' }} min={-20} max={20} step={0.1} placeholder="目标涨跌幅(%)" />
+                      )}
+                    </Form.Item>
+                  )
+                }}
+              </Form.Item>
+            </Space.Compact>
           </Form.Item>
 
-          <Form.Item label="触发条件" name="condition" rules={[{ required: true }]}>
-            <Radio.Group>
-              <Radio.Button value="above">高于</Radio.Button>
-              <Radio.Button value="below">低于</Radio.Button>
-            </Radio.Group>
+          <Form.Item label="提醒文案" name="message" style={{ marginBottom: 12 }} rules={[{ required: true, max: 50, message: '文案不能为空，且最多 50 字' }]}>
+            <Input.TextArea autoSize={{ minRows: 2, maxRows: 3 }} maxLength={50} showCount placeholder="请输入提醒文案" />
           </Form.Item>
 
-          <Form.Item
-            noStyle
-            shouldUpdate={(prevValues, currentValues) => prevValues.type !== currentValues.type}
-          >
-            {({ getFieldValue }): React.ReactNode => {
-              const type = getFieldValue('type')
-              return (
-                <Form.Item label="阈值" name="threshold" rules={[{ required: true, message: '请输入阈值' }]}>
-                  {type === 'price' ? (
-                    <InputNumber style={{ width: '100%' }} precision={2} placeholder="请输入目标价格" />
-                  ) : (
-                    <InputNumber style={{ width: '100%' }} min={-20} max={20} step={0.1} placeholder="请输入目标涨跌幅 (%)" />
-                  )}
-                </Form.Item>
-              )
-            }}
-          </Form.Item>
-
-          <Form.Item label="提醒文案" name="message" rules={[{ required: true, max: 50, message: '文案不能为空，且最多 50 字' }]}>
-            <Input.TextArea maxLength={50} showCount placeholder="请输入提醒文案" />
-          </Form.Item>
-
-          <Form.Item label="提醒方式" name="method" rules={[{ required: true }]}>
+          <Form.Item label="提醒方式" name="method" style={{ marginBottom: 12 }} rules={[{ required: true }]}>
             <Radio.Group>
               <Radio value="popup">弹窗</Radio>
               <Radio value="sound">提示音</Radio>
