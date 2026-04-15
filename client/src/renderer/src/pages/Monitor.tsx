@@ -225,6 +225,47 @@ function Monitor(): React.JSX.Element {
 
       if (isGlobalPaused) return
 
+      const parseTimeToMinutes = (value: unknown): number | null => {
+        if (typeof value !== 'string') return null
+        const m = value.match(/^(\d{1,2}):(\d{2})$/)
+        if (!m) return null
+        const hh = Number(m[1])
+        const mm = Number(m[2])
+        if (!Number.isFinite(hh) || !Number.isFinite(mm)) return null
+        if (hh < 0 || hh > 23 || mm < 0 || mm > 59) return null
+        return hh * 60 + mm
+      }
+
+      const nowMs = Date.now()
+      const alertsTempPausedUntilRaw = await window.api.store.get('alertsTempPausedUntil')
+      const alertsTempPausedUntil =
+        typeof alertsTempPausedUntilRaw === 'number' ? alertsTempPausedUntilRaw : Number(alertsTempPausedUntilRaw)
+      const tempPausedActive = Number.isFinite(alertsTempPausedUntil) && alertsTempPausedUntil > nowMs
+
+      const alertsDndEnabled = (await window.api.store.get('alertsDndEnabled')) === true
+      const alertsDndStart = await window.api.store.get('alertsDndStart')
+      const alertsDndEnd = await window.api.store.get('alertsDndEnd')
+      const alertsDndAllowedMethodsRaw = await window.api.store.get('alertsDndAllowedMethods')
+      const alertsDndAllowedMethods = Array.isArray(alertsDndAllowedMethodsRaw)
+        ? (alertsDndAllowedMethodsRaw.filter((x) => typeof x === 'string') as string[])
+        : []
+
+      const startMin = parseTimeToMinutes(alertsDndStart)
+      const endMin = parseTimeToMinutes(alertsDndEnd)
+      const nowDate = new Date(nowMs)
+      const nowMin = nowDate.getHours() * 60 + nowDate.getMinutes()
+      const rangeActive =
+        alertsDndEnabled &&
+        startMin !== null &&
+        endMin !== null &&
+        (startMin === endMin
+          ? true
+          : startMin < endMin
+            ? nowMin >= startMin && nowMin < endMin
+            : nowMin >= startMin || nowMin < endMin)
+
+      const isDndActive = tempPausedActive || rangeActive
+
       const alerts = await window.api.store.get('alerts')
       if (alerts) {
         visibleStocks.forEach((stock: Stock) => {
@@ -265,21 +306,26 @@ function Monitor(): React.JSX.Element {
               if (!triggeredKeys.current.has(key)) {
                 triggeredKeys.current.add(key)
 
-                const now = Date.now()
                 const lastTriggeredAt = lastTriggeredAtRef.current.get(key) || 0
-                if (cooldownSeconds === 0 || now - lastTriggeredAt >= cooldownSeconds * 1000) {
-                  lastTriggeredAtRef.current.set(key, now)
+                if (cooldownSeconds === 0 || nowMs - lastTriggeredAt >= cooldownSeconds * 1000) {
+                  lastTriggeredAtRef.current.set(key, nowMs)
 
-                  let message = alert.message || `${stock.name}当前${alert.type === 'price' ? '价格' : '涨跌幅'}${alert.type === 'price' ? data.price : data.changePct}已突破${alert.threshold}`
-                  message = message.replace(/\$\{股票名称\}/g, stock.name)
-                    .replace(/\$\{价格\}/g, data.price)
-                    .replace(/\$\{阈值\}/g, String(alert.threshold))
+                  const suppressByDnd =
+                    isDndActive &&
+                    (alertsDndAllowedMethods.length === 0 || !alertsDndAllowedMethods.includes(alert.method))
 
-                  if (alert.method === 'popup') {
-                    const notification = new Notification('股票预警', { body: message })
-                    setTimeout(() => notification.close(), 3000)
-                  } else if (alert.method === 'sound' || alert.method === 'blink') {
-                    window.electron.ipcRenderer.send('trigger-alert', { method: alert.method, message })
+                  if (!suppressByDnd) {
+                    let message = alert.message || `${stock.name}当前${alert.type === 'price' ? '价格' : '涨跌幅'}${alert.type === 'price' ? data.price : data.changePct}已突破${alert.threshold}`
+                    message = message.replace(/\$\{股票名称\}/g, stock.name)
+                      .replace(/\$\{价格\}/g, data.price)
+                      .replace(/\$\{阈值\}/g, String(alert.threshold))
+
+                    if (alert.method === 'popup') {
+                      const notification = new Notification('股票预警', { body: message })
+                      setTimeout(() => notification.close(), 3000)
+                    } else if (alert.method === 'sound' || alert.method === 'blink') {
+                      window.electron.ipcRenderer.send('trigger-alert', { method: alert.method, message })
+                    }
                   }
                 }
               }

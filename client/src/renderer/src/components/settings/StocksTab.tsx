@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react'
-import { Table, Button, Popconfirm, Switch, message, Select, Spin, Modal, Form, Radio, InputNumber, Input, Space, Tooltip } from 'antd'
+import { Table, Button, Popconfirm, Switch, message, Select, Spin, Modal, Form, Radio, InputNumber, Input, Space, Tooltip, Divider } from 'antd'
 import { PlusOutlined, DeleteOutlined, DragOutlined, BellOutlined, BellFilled } from '@ant-design/icons'
 import {
   DndContext,
@@ -104,6 +104,36 @@ const Row = (props: RowProps): React.JSX.Element => {
   )
 }
 
+function parseHHmm(value: string): number | null {
+  const match = value.match(/^(\d{2}):(\d{2})$/)
+  if (!match) return null
+  const h = Number(match[1])
+  const m = Number(match[2])
+  if (!Number.isFinite(h) || !Number.isFinite(m)) return null
+  if (h < 0 || h > 23 || m < 0 || m > 59) return null
+  return h * 60 + m
+}
+
+function isInDndTimeRange(now: Date, start: string, end: string): boolean {
+  const startMin = parseHHmm(start)
+  const endMin = parseHHmm(end)
+  if (startMin === null || endMin === null) return false
+  const nowMin = now.getHours() * 60 + now.getMinutes()
+  if (startMin === endMin) return true
+  if (startMin < endMin) return nowMin >= startMin && nowMin < endMin
+  return nowMin >= startMin || nowMin < endMin
+}
+
+function formatRemaining(ms: number): string {
+  if (!Number.isFinite(ms) || ms <= 0) return ''
+  const totalSeconds = Math.ceil(ms / 1000)
+  const m = Math.floor(totalSeconds / 60)
+  const s = totalSeconds % 60
+  if (m <= 0) return `${s}秒`
+  if (s === 0) return `${m}分钟`
+  return `${m}分钟${s}秒`
+}
+
 export function StocksTab(): React.JSX.Element {
   const [stocks, setStocks] = useState<Stock[]>([])
   const [loading, setLoading] = useState<boolean>(true)
@@ -119,7 +149,20 @@ export function StocksTab(): React.JSX.Element {
   const [form] = Form.useForm()
   const alertModalEnabled = Form.useWatch('enabled', form)
 
+  const [isDndModalVisible, setIsDndModalVisible] = useState<boolean>(false)
+  const [alertsTempPausedUntil, setAlertsTempPausedUntil] = useState<number>(0)
+  const [alertsDndEnabled, setAlertsDndEnabled] = useState<boolean>(false)
+  const [alertsDndStart, setAlertsDndStart] = useState<string>('22:00')
+  const [alertsDndEnd, setAlertsDndEnd] = useState<string>('08:00')
+  const [alertsDndAllowedMethods, setAlertsDndAllowedMethods] = useState<Array<'popup' | 'sound' | 'blink'>>([])
+  const [nowTick, setNowTick] = useState<number>(Date.now())
+
   const fetchRef = useRef<number>(0)
+
+  useEffect(() => {
+    const timer = window.setInterval(() => setNowTick(Date.now()), 1000 * 10)
+    return () => window.clearInterval(timer)
+  }, [])
 
   useEffect(() => {
     const loadData = async (): Promise<void> => {
@@ -154,6 +197,43 @@ export function StocksTab(): React.JSX.Element {
         const savedAlertsGlobalPaused = await window.api.store.get('alertsGlobalPaused')
         if (typeof savedAlertsGlobalPaused === 'boolean') {
           setAlertsGlobalPaused(savedAlertsGlobalPaused)
+        }
+
+        const [
+          savedAlertsTempPausedUntil,
+          savedAlertsDndEnabled,
+          savedAlertsDndStart,
+          savedAlertsDndEnd,
+          savedAlertsDndAllowedMethods
+        ] = await Promise.all([
+          window.api.store.get('alertsTempPausedUntil'),
+          window.api.store.get('alertsDndEnabled'),
+          window.api.store.get('alertsDndStart'),
+          window.api.store.get('alertsDndEnd'),
+          window.api.store.get('alertsDndAllowedMethods')
+        ])
+
+        if (typeof savedAlertsTempPausedUntil === 'number' && Number.isFinite(savedAlertsTempPausedUntil)) {
+          setAlertsTempPausedUntil(savedAlertsTempPausedUntil)
+        }
+
+        if (typeof savedAlertsDndEnabled === 'boolean') {
+          setAlertsDndEnabled(savedAlertsDndEnabled)
+        }
+
+        if (typeof savedAlertsDndStart === 'string' && parseHHmm(savedAlertsDndStart) !== null) {
+          setAlertsDndStart(savedAlertsDndStart)
+        }
+
+        if (typeof savedAlertsDndEnd === 'string' && parseHHmm(savedAlertsDndEnd) !== null) {
+          setAlertsDndEnd(savedAlertsDndEnd)
+        }
+
+        if (Array.isArray(savedAlertsDndAllowedMethods)) {
+          const normalized = savedAlertsDndAllowedMethods.filter((m) => m === 'popup' || m === 'sound' || m === 'blink') as Array<
+            'popup' | 'sound' | 'blink'
+          >
+          setAlertsDndAllowedMethods(normalized)
         }
 
         const savedStocks = await window.api.store.get('stocks')
@@ -191,6 +271,51 @@ export function StocksTab(): React.JSX.Element {
       await window.api.store.set('alertsGlobalPaused', paused)
     } catch (error) {
       console.error('Failed to save alertsGlobalPaused:', error)
+    }
+  }
+
+  const saveAlertsTempPausedUntil = async (until: number): Promise<void> => {
+    setAlertsTempPausedUntil(until)
+    try {
+      await window.api.store.set('alertsTempPausedUntil', until)
+    } catch (error) {
+      console.error('Failed to save alertsTempPausedUntil:', error)
+    }
+  }
+
+  const saveAlertsDndEnabled = async (enabled: boolean): Promise<void> => {
+    setAlertsDndEnabled(enabled)
+    try {
+      await window.api.store.set('alertsDndEnabled', enabled)
+    } catch (error) {
+      console.error('Failed to save alertsDndEnabled:', error)
+    }
+  }
+
+  const saveAlertsDndStart = async (value: string): Promise<void> => {
+    setAlertsDndStart(value)
+    try {
+      await window.api.store.set('alertsDndStart', value)
+    } catch (error) {
+      console.error('Failed to save alertsDndStart:', error)
+    }
+  }
+
+  const saveAlertsDndEnd = async (value: string): Promise<void> => {
+    setAlertsDndEnd(value)
+    try {
+      await window.api.store.set('alertsDndEnd', value)
+    } catch (error) {
+      console.error('Failed to save alertsDndEnd:', error)
+    }
+  }
+
+  const saveAlertsDndAllowedMethods = async (methods: Array<'popup' | 'sound' | 'blink'>): Promise<void> => {
+    setAlertsDndAllowedMethods(methods)
+    try {
+      await window.api.store.set('alertsDndAllowedMethods', methods)
+    } catch (error) {
+      console.error('Failed to save alertsDndAllowedMethods:', error)
     }
   }
 
@@ -459,8 +584,134 @@ export function StocksTab(): React.JSX.Element {
     )
   }
 
+  const isTempPausedActive = alertsTempPausedUntil > nowTick
+  const isTimeDndActive = alertsDndEnabled && isInDndTimeRange(new Date(nowTick), alertsDndStart, alertsDndEnd)
+  const isDndActive = isTempPausedActive || isTimeDndActive
+  const dndStatusText = isDndActive
+    ? isTempPausedActive
+      ? `进行中（剩余 ${formatRemaining(alertsTempPausedUntil - nowTick)}）`
+      : '进行中'
+    : alertsDndEnabled
+      ? '已开启'
+      : '未开启'
+
   return (
     <div style={{ padding: '0 16px' }}>
+      <Modal
+        title="免打扰"
+        open={isDndModalVisible}
+        onCancel={() => setIsDndModalVisible(false)}
+        footer={[
+          <Button key="close" type="primary" onClick={() => setIsDndModalVisible(false)}>
+            关闭
+          </Button>
+        ]}
+        destroyOnClose
+      >
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div>
+              <div style={{ fontWeight: 600 }}>当前状态</div>
+              <div style={{ color: 'rgba(0,0,0,0.65)' }}>{dndStatusText}</div>
+            </div>
+            <Button
+              onClick={() => {
+                saveAlertsTempPausedUntil(0)
+              }}
+            >
+              立即恢复
+            </Button>
+          </div>
+
+          <Divider style={{ margin: '4px 0' }} />
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <div style={{ fontWeight: 600 }}>临时暂停预警</div>
+            <Space size="small" wrap>
+              <Button
+                onClick={() => {
+                  saveAlertsTempPausedUntil(Date.now() + 30 * 60 * 1000)
+                }}
+              >
+                30 分钟
+              </Button>
+              <Button
+                onClick={() => {
+                  saveAlertsTempPausedUntil(Date.now() + 60 * 60 * 1000)
+                }}
+              >
+                60 分钟
+              </Button>
+              <Button
+                onClick={() => {
+                  saveAlertsTempPausedUntil(Date.now() + 120 * 60 * 1000)
+                }}
+              >
+                120 分钟
+              </Button>
+            </Space>
+          </div>
+
+          <Divider style={{ margin: '4px 0' }} />
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ fontWeight: 600 }}>时间段免打扰</div>
+              <Switch
+                checked={alertsDndEnabled}
+                checkedChildren="开启"
+                unCheckedChildren="关闭"
+                onChange={(checked) => saveAlertsDndEnabled(checked)}
+              />
+            </div>
+            <Space.Compact style={{ width: '100%' }}>
+              <Input
+                value={alertsDndStart}
+                onChange={(e) => {
+                  const next = e.target.value
+                  setAlertsDndStart(next)
+                  if (parseHHmm(next) !== null) {
+                    saveAlertsDndStart(next)
+                  }
+                }}
+                placeholder="开始 HH:mm"
+                disabled={!alertsDndEnabled}
+              />
+              <Input
+                value={alertsDndEnd}
+                onChange={(e) => {
+                  const next = e.target.value
+                  setAlertsDndEnd(next)
+                  if (parseHHmm(next) !== null) {
+                    saveAlertsDndEnd(next)
+                  }
+                }}
+                placeholder="结束 HH:mm"
+                disabled={!alertsDndEnabled}
+              />
+            </Space.Compact>
+          </div>
+
+          <Divider style={{ margin: '4px 0' }} />
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <div style={{ fontWeight: 600 }}>免打扰期间提醒方式</div>
+            <Select
+              mode="multiple"
+              allowClear
+              placeholder="不选表示全部静默"
+              value={alertsDndAllowedMethods}
+              onChange={(values) => saveAlertsDndAllowedMethods(values as Array<'popup' | 'sound' | 'blink'>)}
+              options={[
+                { label: '弹窗', value: 'popup' },
+                { label: '提示音', value: 'sound' },
+                { label: '托盘闪烁', value: 'blink' }
+              ]}
+            />
+          </div>
+        </div>
+      </Modal>
+
       <div
         style={{
           marginBottom: 16,
@@ -494,15 +745,24 @@ export function StocksTab(): React.JSX.Element {
           </Button>
         </div>
         <Space size="small">
-          <span>全部预警</span>
-          <Switch
-            checked={!alertsGlobalPaused}
-            checkedChildren="开启"
-            unCheckedChildren="暂停"
-            onChange={(checked): void => {
-              saveAlertsGlobalPaused(!checked)
-            }}
-          />
+          <Space size={6}>
+            <span>全部预警</span>
+            <Switch
+              checked={!alertsGlobalPaused}
+              checkedChildren="开启"
+              unCheckedChildren="暂停"
+              onChange={(checked): void => {
+                saveAlertsGlobalPaused(!checked)
+              }}
+            />
+          </Space>
+          <Divider type="vertical" style={{ margin: '0 4px' }} />
+          <Tooltip title={`免打扰：${dndStatusText}`}>
+            <Button type="link" size="small" onClick={() => setIsDndModalVisible(true)} style={{ padding: 0 }}>
+              免打扰
+            </Button>
+          </Tooltip>
+          <span style={{ color: 'rgba(0,0,0,0.45)' }}>{dndStatusText}</span>
         </Space>
       </div>
       <DndContext
@@ -613,7 +873,6 @@ export function StocksTab(): React.JSX.Element {
             </Space.Compact>
           </Form.Item>
 
-          <Form.Item label="提醒文案" name="message" style={{ marginBottom: 12 }} rules={[{ required: true, max: 50, message: '文案不能为空，且最多 50 字' }]}>
           <Form.Item label="触发控制" style={{ marginBottom: 12 }}>
             <Space.Compact style={{ width: '100%' }}>
               <Form.Item name="cooldownSeconds" noStyle rules={[{ required: true, message: '请输入冷却时间' }]}>
@@ -639,10 +898,14 @@ export function StocksTab(): React.JSX.Element {
             </Space.Compact>
           </Form.Item>
 
+          <Form.Item
+            label="提醒文案"
+            name="message"
+            style={{ marginBottom: 12 }}
+            rules={[{ required: true, max: 50, message: '文案不能为空，且最多 50 字' }]}
+          >
             <Input.TextArea autoSize={{ minRows: 2, maxRows: 3 }} maxLength={50} showCount placeholder="请输入提醒文案" />
           </Form.Item>
-
-
           <Form.Item label="提醒方式" name="method" style={{ marginBottom: 12 }} rules={[{ required: true }]}>
             <Radio.Group>
               <Radio value="popup">弹窗</Radio>
