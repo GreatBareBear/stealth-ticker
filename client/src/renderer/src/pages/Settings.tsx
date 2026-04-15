@@ -17,33 +17,33 @@ function Settings(): React.JSX.Element {
     },
     {
       key: '2',
-      label: '会员',
-      children: <MembershipTab />
-    },
-    {
-      key: '3',
       label: '显示',
       children: <DisplayTab />
     },
     {
-      key: '4',
+      key: '3',
       label: '高级',
       children: <AdvancedTab />
     },
     {
-      key: '5',
+      key: '4',
       label: '股价图',
       children: <ChartTab />
     },
     {
+      key: '5',
+      label: '数据看板',
+      children: <DashboardTab />
+    },
+    {
       key: '6',
-      label: '其他',
-      children: <OtherTab />
+      label: '会员',
+      children: <MembershipTab />
     },
     {
       key: '7',
-      label: '数据看板',
-      children: <DashboardTab />
+      label: '其它',
+      children: <OtherTab />
     }
   ]
 
