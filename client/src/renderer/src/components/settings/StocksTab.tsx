@@ -111,7 +111,6 @@ export function StocksTab(): React.JSX.Element {
   const [selectedStock, setSelectedStock] = useState<OptionData | null>(null)
 
   const [alerts, setAlerts] = useState<Record<string, AlertConfig>>({})
-  const [alertsGlobalPaused, setAlertsGlobalPaused] = useState<boolean>(false)
   const [isAlertModalVisible, setIsAlertModalVisible] = useState<boolean>(false)
   const [currentAlertSymbol, setCurrentAlertSymbol] = useState<string | null>(null)
   const [form] = Form.useForm()
@@ -140,11 +139,6 @@ export function StocksTab(): React.JSX.Element {
           }
         }
 
-        const savedAlertsGlobalPaused = await window.api.store.get('alertsGlobalPaused')
-        if (typeof savedAlertsGlobalPaused === 'boolean') {
-          setAlertsGlobalPaused(savedAlertsGlobalPaused)
-        }
-
         const savedStocks = await window.api.store.get('stocks')
         if (savedStocks && Array.isArray(savedStocks)) {
           setStocks(savedStocks)
@@ -171,15 +165,6 @@ export function StocksTab(): React.JSX.Element {
       await window.api.store.set('alerts', newAlerts)
     } catch (error) {
       console.error('Failed to save alerts:', error)
-    }
-  }
-
-  const saveAlertsGlobalPaused = async (paused: boolean): Promise<void> => {
-    setAlertsGlobalPaused(paused)
-    try {
-      await window.api.store.set('alertsGlobalPaused', paused)
-    } catch (error) {
-      console.error('Failed to save alertsGlobalPaused:', error)
     }
   }
 
@@ -407,7 +392,7 @@ export function StocksTab(): React.JSX.Element {
               type="text"
               icon={
                 alerts[record.symbol] ? (
-                  alertsGlobalPaused || alerts[record.symbol].enabled === false ? (
+                  alerts[record.symbol].enabled === false ? (
                     <BellFilled style={{ color: '#bfbfbf' }} />
                   ) : (
                     <BellFilled style={{ color: '#faad14' }} />
@@ -475,17 +460,6 @@ export function StocksTab(): React.JSX.Element {
             添加
           </Button>
         </div>
-        <Space size="small">
-          <span>全部预警</span>
-          <Switch
-            checked={!alertsGlobalPaused}
-            checkedChildren="开启"
-            unCheckedChildren="暂停"
-            onChange={(checked): void => {
-              saveAlertsGlobalPaused(!checked)
-            }}
-          />
-        </Space>
       </div>
       <DndContext
         sensors={sensors}

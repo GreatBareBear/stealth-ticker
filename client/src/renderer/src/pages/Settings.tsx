@@ -2,11 +2,9 @@ import React from 'react'
 import { Tabs, ConfigProvider } from 'antd'
 import { StocksTab } from '../components/settings/StocksTab'
 import { DisplayTab } from '../components/settings/DisplayTab'
-import { AdvancedTab } from '../components/settings/AdvancedTab'
-import { MembershipTab } from '../components/settings/MembershipTab'
-import { ChartTab } from '../components/settings/ChartTab'
-import { OtherTab } from '../components/settings/OtherTab'
-import { DashboardTab } from '../components/settings/DashboardTab'
+import { AlertsTab } from '../components/settings/AlertsTab'
+import { PrivacyTab } from '../components/settings/PrivacyTab'
+import { DataTab } from '../components/settings/DataTab'
 
 function Settings(): React.JSX.Element {
   const items = [
@@ -17,33 +15,23 @@ function Settings(): React.JSX.Element {
     },
     {
       key: '2',
-      label: '显示',
+      label: '盯盘显示',
       children: <DisplayTab />
     },
     {
       key: '3',
-      label: '高级',
-      children: <AdvancedTab />
+      label: '预警通知',
+      children: <AlertsTab />
     },
     {
       key: '4',
-      label: '股价图',
-      children: <ChartTab />
+      label: '隐私与隐蔽',
+      children: <PrivacyTab />
     },
     {
       key: '5',
-      label: '数据看板',
-      children: <DashboardTab />
-    },
-    {
-      key: '6',
-      label: '会员',
-      children: <MembershipTab />
-    },
-    {
-      key: '7',
-      label: '其它',
-      children: <OtherTab />
+      label: '高级与数据',
+      children: <DataTab />
     }
   ]
 
