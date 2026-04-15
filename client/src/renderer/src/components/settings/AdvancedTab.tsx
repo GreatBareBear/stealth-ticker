@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import {
+  Collapse,
   Form,
   Input,
   Button,
@@ -14,7 +15,7 @@ import {
   Divider
 } from 'antd'
 
-const { Title, Text } = Typography
+const { Text } = Typography
 
 export function AdvancedTab(): React.JSX.Element {
   const [form] = Form.useForm()
@@ -112,78 +113,95 @@ export function AdvancedTab(): React.JSX.Element {
           ghostMode: true
         }}
       >
-        <Title level={5}>行为与控制</Title>
-        <Form.Item label="幽灵模式" name="ghostMode">
-          <Segmented
-            options={[
-              { label: '开启', value: true },
-              { label: '关闭', value: false }
-            ]}
-          />
-        </Form.Item>
+        <Collapse
+          size="small"
+          defaultActiveKey={['behavior']}
+          items={[
+            {
+              key: 'behavior',
+              label: '行为与控制',
+              children: (
+                <>
+                  <Form.Item label="幽灵模式" name="ghostMode">
+                    <Segmented
+                      options={[
+                        { label: '开启', value: true },
+                        { label: '关闭', value: false }
+                      ]}
+                    />
+                  </Form.Item>
 
-        <Form.Item label="总在最前" name="alwaysOnTop">
-          <Segmented
-            options={[
-              { label: '开启', value: true },
-              { label: '关闭', value: false }
-            ]}
-          />
-        </Form.Item>
+                  <Form.Item label="总在最前" name="alwaysOnTop">
+                    <Segmented
+                      options={[
+                        { label: '开启', value: true },
+                        { label: '关闭', value: false }
+                      ]}
+                    />
+                  </Form.Item>
 
-        <Form.Item label="显示通知区图标" name="showTrayIcon">
-          <Segmented
-            options={[
-              { label: '开启', value: true },
-              { label: '关闭', value: false }
-            ]}
-          />
-        </Form.Item>
+                  <Form.Item label="显示通知区图标" name="showTrayIcon">
+                    <Segmented
+                      options={[
+                        { label: '开启', value: true },
+                        { label: '关闭', value: false }
+                      ]}
+                    />
+                  </Form.Item>
 
-        <Form.Item label="开启页面右键" name="enableContextMenu">
-          <Segmented
-            options={[
-              { label: '开启', value: true },
-              { label: '关闭', value: false }
-            ]}
-          />
-        </Form.Item>
+                  <Form.Item label="开启页面右键" name="enableContextMenu" style={{ marginBottom: 0 }}>
+                    <Segmented
+                      options={[
+                        { label: '开启', value: true },
+                        { label: '关闭', value: false }
+                      ]}
+                    />
+                  </Form.Item>
+                </>
+              )
+            },
+            {
+              key: 'hotkey',
+              label: '快捷键',
+              children: (
+                <Form.Item label="老板键" style={{ marginBottom: 0 }}>
+                  <Space>
+                    <Form.Item name="bossKeyEnabled" valuePropName="checked" noStyle>
+                      <Checkbox />
+                    </Form.Item>
+                    <Form.Item name="bossKeyModifier" noStyle>
+                      <Select style={{ width: 100 }}>
+                        <Select.Option value="CommandOrControl">Ctrl/Cmd</Select.Option>
+                        <Select.Option value="Alt">Alt</Select.Option>
+                        <Select.Option value="Shift">Shift</Select.Option>
+                      </Select>
+                    </Form.Item>
+                    <Text>+</Text>
+                    <Form.Item name="bossKey" noStyle>
+                      <Input
+                        style={{ width: 60, textTransform: 'uppercase' }}
+                        maxLength={1}
+                        onChange={(e) => {
+                          e.target.value = e.target.value.toUpperCase()
+                          form.setFieldsValue({ bossKey: e.target.value })
+                        }}
+                      />
+                    </Form.Item>
+                    <Form.Item name="bossKeyAction" noStyle>
+                      <Radio.Group>
+                        <Radio value="hide">隐藏</Radio>
+                        <Radio value="exit">退出</Radio>
+                      </Radio.Group>
+                    </Form.Item>
+                  </Space>
+                </Form.Item>
+              )
+            }
+          ]}
+        />
 
-        <Divider />
-        <Title level={5}>快捷键</Title>
-        <Form.Item label="老板键">
-          <Space>
-            <Form.Item name="bossKeyEnabled" valuePropName="checked" noStyle>
-              <Checkbox />
-            </Form.Item>
-            <Form.Item name="bossKeyModifier" noStyle>
-              <Select style={{ width: 100 }}>
-                <Select.Option value="CommandOrControl">Ctrl/Cmd</Select.Option>
-                <Select.Option value="Alt">Alt</Select.Option>
-                <Select.Option value="Shift">Shift</Select.Option>
-              </Select>
-            </Form.Item>
-            <Text>+</Text>
-            <Form.Item name="bossKey" noStyle>
-              <Input
-                style={{ width: 60, textTransform: 'uppercase' }}
-                maxLength={1}
-                onChange={(e) => {
-                  e.target.value = e.target.value.toUpperCase()
-                  form.setFieldsValue({ bossKey: e.target.value })
-                }}
-              />
-            </Form.Item>
-            <Form.Item name="bossKeyAction" noStyle>
-              <Radio.Group>
-                <Radio value="hide">隐藏</Radio>
-                <Radio value="exit">退出</Radio>
-              </Radio.Group>
-            </Form.Item>
-          </Space>
-        </Form.Item>
-
-        <Form.Item wrapperCol={{ offset: 6, span: 16 }} style={{ marginBottom: 0 }}>
+        <Divider style={{ margin: '12px 0 0 0' }} />
+        <Form.Item wrapperCol={{ offset: 6, span: 16 }} style={{ marginBottom: 0, marginTop: 12 }}>
           <Button onClick={handleReset}>一键重置(R)</Button>
         </Form.Item>
       </Form>
