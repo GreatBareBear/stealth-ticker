@@ -36,6 +36,14 @@ interface StockData {
   low: string
 }
 
+interface AlertConfig {
+  type: 'price' | 'percent'
+  condition: 'above' | 'below'
+  threshold: number
+  message: string
+  method: 'popup' | 'sound' | 'blink'
+}
+
 const DEFAULT_SETTINGS: Settings = {
   theme: true,
   colorTheme: 'red-green',
@@ -69,6 +77,7 @@ function Monitor(): React.JSX.Element {
   const [isLocked, setIsLocked] = useState(false)
   const [isWindowHidden, setIsWindowHidden] = useState(false)
   const dragPosRef = useRef({ x: 0, y: 0 })
+  const triggeredKeys = useRef<Set<string>>(new Set())
 
   useEffect(() => {
     const handleLock = (_event: any, locked: boolean) => {
@@ -185,6 +194,49 @@ function Monitor(): React.JSX.Element {
       })
 
       setStockData(newData)
+
+      const alerts = await window.api.store.get('alerts')
+      if (alerts) {
+        visibleStocks.forEach((stock: Stock) => {
+          const data = newData[stock.symbol]
+          const alert = alerts[stock.symbol] as AlertConfig
+          if (data && alert) {
+            const value = alert.type === 'price' ? parseFloat(data.price) : parseFloat(data.changePct)
+            if (isNaN(value)) return
+
+            let isTriggered = false
+            if (alert.condition === 'above' && value > alert.threshold) {
+              isTriggered = true
+            } else if (alert.condition === 'below' && value < alert.threshold) {
+              isTriggered = true
+            }
+
+            const key = `${stock.symbol}-${alert.type}-${alert.condition}`
+
+            if (isTriggered) {
+              if (!triggeredKeys.current.has(key)) {
+                triggeredKeys.current.add(key)
+                
+                let message = alert.message || `${stock.name}当前${alert.type === 'price' ? '价格' : '涨跌幅'}${alert.type === 'price' ? data.price : data.changePct}已突破${alert.threshold}`
+                message = message.replace(/\$\{股票名称\}/g, stock.name)
+                  .replace(/\$\{价格\}/g, data.price)
+                  .replace(/\$\{阈值\}/g, String(alert.threshold))
+
+                if (alert.method === 'popup') {
+                  const notification = new Notification('股票预警', { body: message })
+                  setTimeout(() => notification.close(), 3000)
+                } else if (alert.method === 'sound' || alert.method === 'blink') {
+                  window.electron.ipcRenderer.send('trigger-alert', { method: alert.method, message })
+                }
+              }
+            } else {
+              if (triggeredKeys.current.has(key)) {
+                triggeredKeys.current.delete(key)
+              }
+            }
+          }
+        })
+      }
     } catch (error) {
       console.error('Failed to fetch stock data', error)
     }
