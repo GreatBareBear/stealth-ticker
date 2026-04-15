@@ -479,7 +479,7 @@ export function StocksTab(): React.JSX.Element {
           <span>全部预警</span>
           <Switch
             checked={!alertsGlobalPaused}
-            checkedChildren="启用"
+            checkedChildren="开启"
             unCheckedChildren="暂停"
             onChange={(checked): void => {
               saveAlertsGlobalPaused(!checked)
@@ -539,7 +539,7 @@ export function StocksTab(): React.JSX.Element {
                     ? alerts[currentAlertSymbol].enabled !== false
                     : true
               }
-              checkedChildren="启用"
+              checkedChildren="开启"
               unCheckedChildren="暂停"
               disabled={!currentAlertSymbol}
               onChange={(checked): void => {
@@ -556,6 +556,9 @@ export function StocksTab(): React.JSX.Element {
         ]}
       >
         <Form form={form} layout="vertical">
+          <Form.Item name="enabled" hidden valuePropName="checked">
+            <Switch />
+          </Form.Item>
           <Form.Item label="触发条件" style={{ marginBottom: 12 }}>
             <Space.Compact style={{ width: '100%' }}>
               <Form.Item name="type" noStyle rules={[{ required: true }]}>
