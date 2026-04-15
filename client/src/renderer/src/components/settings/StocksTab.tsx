@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react'
-import { Table, Button, Popconfirm, Switch, message, Select, Spin } from 'antd'
-import { PlusOutlined, DeleteOutlined, DragOutlined } from '@ant-design/icons'
+import { Table, Button, Popconfirm, Switch, message, Select, Spin, Modal, Form, Radio, InputNumber, Input, Space, Tooltip } from 'antd'
+import { PlusOutlined, DeleteOutlined, DragOutlined, BellOutlined, BellFilled } from '@ant-design/icons'
 import {
   DndContext,
   PointerSensor,
@@ -24,6 +24,14 @@ export interface Stock {
   name: string
   isIndex: boolean
   visible: boolean
+}
+
+export interface AlertConfig {
+  type: 'price' | 'percent'
+  condition: 'above' | 'below'
+  threshold: number
+  message: string
+  method: 'popup' | 'sound' | 'blink'
 }
 
 export interface OptionData {
@@ -101,11 +109,21 @@ export function StocksTab(): React.JSX.Element {
   const [searchLoading, setSearchLoading] = useState<boolean>(false)
   const [selectedStock, setSelectedStock] = useState<OptionData | null>(null)
 
+  const [alerts, setAlerts] = useState<Record<string, AlertConfig>>({})
+  const [isAlertModalVisible, setIsAlertModalVisible] = useState<boolean>(false)
+  const [currentAlertSymbol, setCurrentAlertSymbol] = useState<string | null>(null)
+  const [form] = Form.useForm()
+
   const fetchRef = useRef<number>(0)
 
   useEffect(() => {
-    const loadStocks = async (): Promise<void> => {
+    const loadData = async (): Promise<void> => {
       try {
+        const savedAlerts = await window.api.store.get('alerts')
+        if (savedAlerts) {
+          setAlerts(savedAlerts)
+        }
+
         const savedStocks = await window.api.store.get('stocks')
         if (savedStocks && Array.isArray(savedStocks)) {
           setStocks(savedStocks)
@@ -118,13 +136,62 @@ export function StocksTab(): React.JSX.Element {
           ])
         }
       } catch (error) {
-        console.error('Failed to load stocks:', error)
+        console.error('Failed to load data:', error)
       } finally {
         setLoading(false)
       }
     }
-    loadStocks()
+    loadData()
   }, [])
+
+  const saveAlerts = async (newAlerts: Record<string, AlertConfig>): Promise<void> => {
+    setAlerts(newAlerts)
+    try {
+      await window.api.store.set('alerts', newAlerts)
+    } catch (error) {
+      console.error('Failed to save alerts:', error)
+    }
+  }
+
+  const openAlertModal = (record: Stock): void => {
+    setCurrentAlertSymbol(record.symbol)
+    const existingAlert = alerts[record.symbol]
+    if (existingAlert) {
+      form.setFieldsValue(existingAlert)
+    } else {
+      form.setFieldsValue({
+        type: 'price',
+        condition: 'above',
+        threshold: undefined,
+        message: `\${股票名称}当前价格\${价格}已突破\${阈值}`,
+        method: 'popup'
+      })
+    }
+    setIsAlertModalVisible(true)
+  }
+
+  const handleAlertModalOk = async (): Promise<void> => {
+    try {
+      const values = await form.validateFields()
+      if (currentAlertSymbol) {
+        const newAlerts = { ...alerts, [currentAlertSymbol]: values as AlertConfig }
+        await saveAlerts(newAlerts)
+      }
+      setIsAlertModalVisible(false)
+    } catch (error) {
+      // Form validation failed
+    }
+  }
+
+  const handleAlertModalCancel = (): void => {
+    setIsAlertModalVisible(false)
+  }
+
+  const handleDeleteAlert = async (symbol: string): Promise<void> => {
+    const newAlerts = { ...alerts }
+    delete newAlerts[symbol]
+    await saveAlerts(newAlerts)
+  }
 
   const updateStocks = async (newStocks: Stock[]): Promise<void> => {
     setStocks(newStocks)
@@ -283,14 +350,24 @@ export function StocksTab(): React.JSX.Element {
       title: '操作',
       key: 'action',
       render: (_, record: Stock): React.JSX.Element => (
-        <Popconfirm
-          title="确定删除该股票吗？"
-          onConfirm={(): void => handleDelete(record.key)}
-          okText="是"
-          cancelText="否"
-        >
-          <Button type="text" danger icon={<DeleteOutlined />} size="small" />
-        </Popconfirm>
+        <Space size="small">
+          <Tooltip title="预警设置">
+            <Button
+              type="text"
+              icon={alerts[record.symbol] ? <BellFilled style={{ color: '#faad14' }} /> : <BellOutlined />}
+              size="small"
+              onClick={() => openAlertModal(record)}
+            />
+          </Tooltip>
+          <Popconfirm
+            title="确定删除该股票吗？"
+            onConfirm={(): void => handleDelete(record.key)}
+            okText="是"
+            cancelText="否"
+          >
+            <Button type="text" danger icon={<DeleteOutlined />} size="small" />
+          </Popconfirm>
+        </Space>
       )
     }
   ]
@@ -350,6 +427,82 @@ export function StocksTab(): React.JSX.Element {
           />
         </SortableContext>
       </DndContext>
+
+      <Modal
+        title="预警设置"
+        open={isAlertModalVisible}
+        onOk={handleAlertModalOk}
+        onCancel={handleAlertModalCancel}
+        destroyOnClose
+        footer={[
+          <Button
+            key="delete"
+            danger
+            onClick={() => {
+              if (currentAlertSymbol) {
+                handleDeleteAlert(currentAlertSymbol)
+                setIsAlertModalVisible(false)
+              }
+            }}
+            style={{ float: 'left' }}
+            disabled={!currentAlertSymbol || !alerts[currentAlertSymbol]}
+          >
+            清除预警
+          </Button>,
+          <Button key="cancel" onClick={handleAlertModalCancel}>
+            取消
+          </Button>,
+          <Button key="submit" type="primary" onClick={handleAlertModalOk}>
+            保存
+          </Button>
+        ]}
+      >
+        <Form form={form} layout="vertical">
+          <Form.Item label="预警类型" name="type" rules={[{ required: true }]}>
+            <Radio.Group>
+              <Radio.Button value="price">价格</Radio.Button>
+              <Radio.Button value="percent">涨跌幅</Radio.Button>
+            </Radio.Group>
+          </Form.Item>
+
+          <Form.Item label="触发条件" name="condition" rules={[{ required: true }]}>
+            <Radio.Group>
+              <Radio.Button value="above">高于</Radio.Button>
+              <Radio.Button value="below">低于</Radio.Button>
+            </Radio.Group>
+          </Form.Item>
+
+          <Form.Item
+            noStyle
+            shouldUpdate={(prevValues, currentValues) => prevValues.type !== currentValues.type}
+          >
+            {({ getFieldValue }): React.ReactNode => {
+              const type = getFieldValue('type')
+              return (
+                <Form.Item label="阈值" name="threshold" rules={[{ required: true, message: '请输入阈值' }]}>
+                  {type === 'price' ? (
+                    <InputNumber style={{ width: '100%' }} precision={2} placeholder="请输入目标价格" />
+                  ) : (
+                    <InputNumber style={{ width: '100%' }} min={-20} max={20} step={0.1} placeholder="请输入目标涨跌幅 (%)" />
+                  )}
+                </Form.Item>
+              )
+            }}
+          </Form.Item>
+
+          <Form.Item label="提醒文案" name="message" rules={[{ required: true, max: 50, message: '文案不能为空，且最多 50 字' }]}>
+            <Input.TextArea maxLength={50} showCount placeholder="请输入提醒文案" />
+          </Form.Item>
+
+          <Form.Item label="提醒方式" name="method" rules={[{ required: true }]}>
+            <Radio.Group>
+              <Radio value="popup">弹窗</Radio>
+              <Radio value="sound">提示音</Radio>
+              <Radio value="blink">托盘闪烁</Radio>
+            </Radio.Group>
+          </Form.Item>
+        </Form>
+      </Modal>
     </div>
   )
 }

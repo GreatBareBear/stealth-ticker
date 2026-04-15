@@ -1,4 +1,4 @@
-import { app, shell, BrowserWindow, ipcMain, Tray, Menu, globalShortcut } from 'electron'
+import { app, shell, BrowserWindow, ipcMain, Tray, Menu, globalShortcut, nativeImage } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
@@ -264,6 +264,40 @@ app.whenReady().then(() => {
     if (win) {
       const [x, y] = win.getPosition()
       win.setPosition(x + deltaX, y + deltaY)
+    }
+  })
+
+  let blinkInterval: NodeJS.Timeout | null = null
+
+  ipcMain.on('trigger-alert', (_event, { method, message }) => {
+    if (method === 'sound') {
+      shell.beep()
+    } else if (method === 'blink') {
+      if (blinkInterval) {
+        clearInterval(blinkInterval)
+      }
+      if (!tray) return
+      
+      let isHidden = false
+      let count = 0
+      const emptyImage = nativeImage.createEmpty()
+      
+      blinkInterval = setInterval(() => {
+        if (!tray) {
+          if (blinkInterval) clearInterval(blinkInterval)
+          return
+        }
+        
+        isHidden = !isHidden
+        tray.setImage(isHidden ? emptyImage : icon)
+        count++
+
+        if (count >= 20) {
+          clearInterval(blinkInterval!)
+          blinkInterval = null
+          if (tray) tray.setImage(icon)
+        }
+      }, 500)
     }
   })
 
