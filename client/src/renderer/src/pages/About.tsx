@@ -4,6 +4,31 @@ import icon from '../../../../resources/icon.png'
 
 const { Title, Text } = Typography
 
+function ContactRow({ label, value }: { label: string; value: string }): React.JSX.Element {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', width: '100%' }}>
+      <Text style={{ width: 60, flexShrink: 0 }}>{label}</Text>
+      <div
+        style={{
+          flex: 1,
+          minWidth: 0,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 8,
+          padding: '6px 10px',
+          border: '1px solid #d9d9d9',
+          borderRadius: 8,
+          background: '#fafafa'
+        }}
+      >
+        <Text ellipsis={{ tooltip: value }} style={{ flex: 1, minWidth: 0 }}>
+          {value}
+        </Text>
+        <Text copyable={{ text: value }} />
+      </div>
+    </div>
+  )
+}
 
 function About(): React.JSX.Element {
   return (
@@ -43,7 +68,6 @@ function About(): React.JSX.Element {
           </div>
         </div>
 
-        {/* Middle Area: Copyright and Info */}
         <div style={{ flex: 1 }}>
           <Space direction="vertical" size="small">
             <Text>版权所有 © Xue Maogang 2025 - 2026. All rights reserved.</Text>
@@ -58,25 +82,14 @@ function About(): React.JSX.Element {
           <Divider style={{ margin: '12px 0' }} />
 
           <div style={{ display: 'flex', flexDirection: 'column' }}>
-            {/* Contact Info Readonly Inputs */}
             <div style={{ width: '100%', marginBottom: 12 }}>
               <Space direction="vertical" size="small" style={{ width: '100%' }}>
-                <div style={{ display: 'flex', alignItems: 'center', width: '100%' }}>
-                  <Text style={{ width: 60, flexShrink: 0 }}>Home:</Text>
-                  <Text copyable style={{ flex: 1, minWidth: 0 }}>www.ipv8.com</Text>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', width: '100%' }}>
-                  <Text style={{ width: 60, flexShrink: 0 }}>E-mail:</Text>
-                  <Text copyable style={{ flex: 1, minWidth: 0 }}>43757098@qq.com</Text>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', width: '100%' }}>
-                  <Text style={{ width: 60, flexShrink: 0 }}>QQ 群:</Text>
-                  <Text copyable style={{ flex: 1, minWidth: 0 }}>43757098</Text>
-                </div>
+                <ContactRow label="Home:" value="www.ipv8.com" />
+                <ContactRow label="E-mail:" value="43757098@qq.com" />
+                <ContactRow label="QQ 群:" value="43757098" />
               </Space>
             </div>
 
-            {/* Check Update Button */}
             <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
               <Button type="primary" size="middle">
                 检查更新
