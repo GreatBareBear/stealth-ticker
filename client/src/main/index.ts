@@ -269,7 +269,7 @@ app.whenReady().then(() => {
 
   let blinkInterval: NodeJS.Timeout | null = null
 
-  ipcMain.on('trigger-alert', (_event, { method, message }) => {
+  ipcMain.on('trigger-alert', (_event, { method, message: _message }: { method: string; message?: string }) => {
     if (method === 'sound') {
       shell.beep()
     } else if (method === 'blink') {

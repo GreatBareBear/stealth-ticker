@@ -32,6 +32,7 @@ export interface AlertConfig {
   threshold: number
   message: string
   method: 'popup' | 'sound' | 'blink'
+  enabled: boolean
 }
 
 export interface OptionData {
@@ -110,6 +111,7 @@ export function StocksTab(): React.JSX.Element {
   const [selectedStock, setSelectedStock] = useState<OptionData | null>(null)
 
   const [alerts, setAlerts] = useState<Record<string, AlertConfig>>({})
+  const [alertsGlobalPaused, setAlertsGlobalPaused] = useState<boolean>(false)
   const [isAlertModalVisible, setIsAlertModalVisible] = useState<boolean>(false)
   const [currentAlertSymbol, setCurrentAlertSymbol] = useState<string | null>(null)
   const [form] = Form.useForm()
@@ -120,8 +122,26 @@ export function StocksTab(): React.JSX.Element {
     const loadData = async (): Promise<void> => {
       try {
         const savedAlerts = await window.api.store.get('alerts')
-        if (savedAlerts) {
-          setAlerts(savedAlerts)
+        if (savedAlerts && typeof savedAlerts === 'object') {
+          let hasLegacyAlert = false
+          const normalizedAlerts = Object.fromEntries(
+            Object.entries(savedAlerts as Record<string, Partial<AlertConfig>>).map(([symbol, config]) => {
+              const safeConfig = config && typeof config === 'object' ? config : {}
+              if (config && typeof config === 'object' && typeof config.enabled !== 'boolean') {
+                hasLegacyAlert = true
+              }
+              return [symbol, { ...(safeConfig as AlertConfig), enabled: safeConfig.enabled !== false }]
+            })
+          ) as Record<string, AlertConfig>
+          setAlerts(normalizedAlerts)
+          if (hasLegacyAlert) {
+            await window.api.store.set('alerts', normalizedAlerts)
+          }
+        }
+
+        const savedAlertsGlobalPaused = await window.api.store.get('alertsGlobalPaused')
+        if (typeof savedAlertsGlobalPaused === 'boolean') {
+          setAlertsGlobalPaused(savedAlertsGlobalPaused)
         }
 
         const savedStocks = await window.api.store.get('stocks')
@@ -153,18 +173,28 @@ export function StocksTab(): React.JSX.Element {
     }
   }
 
+  const saveAlertsGlobalPaused = async (paused: boolean): Promise<void> => {
+    setAlertsGlobalPaused(paused)
+    try {
+      await window.api.store.set('alertsGlobalPaused', paused)
+    } catch (error) {
+      console.error('Failed to save alertsGlobalPaused:', error)
+    }
+  }
+
   const openAlertModal = (record: Stock): void => {
     setCurrentAlertSymbol(record.symbol)
     const existingAlert = alerts[record.symbol]
     if (existingAlert) {
-      form.setFieldsValue(existingAlert)
+      form.setFieldsValue({ ...existingAlert, enabled: existingAlert.enabled !== false })
     } else {
       form.setFieldsValue({
         type: 'price',
         condition: 'above',
         threshold: undefined,
         message: `\${股票名称}当前价格\${价格}已突破\${阈值}`,
-        method: 'popup'
+        method: 'popup',
+        enabled: true
       })
     }
     setIsAlertModalVisible(true)
@@ -174,12 +204,15 @@ export function StocksTab(): React.JSX.Element {
     try {
       const values = await form.validateFields()
       if (currentAlertSymbol) {
-        const newAlerts = { ...alerts, [currentAlertSymbol]: values as AlertConfig }
+        const newAlerts = {
+          ...alerts,
+          [currentAlertSymbol]: { ...(values as AlertConfig), enabled: values.enabled !== false }
+        }
         await saveAlerts(newAlerts)
       }
       setIsAlertModalVisible(false)
-    } catch (error) {
-      // Form validation failed
+    } catch {
+      return
     }
   }
 
@@ -191,6 +224,12 @@ export function StocksTab(): React.JSX.Element {
     const newAlerts = { ...alerts }
     delete newAlerts[symbol]
     await saveAlerts(newAlerts)
+  }
+
+  const handleAlertEnabledChange = async (symbol: string, enabled: boolean): Promise<void> => {
+    const existingAlert = alerts[symbol]
+    if (!existingAlert) return
+    await saveAlerts({ ...alerts, [symbol]: { ...existingAlert, enabled } })
   }
 
   const updateStocks = async (newStocks: Stock[]): Promise<void> => {
@@ -351,10 +390,30 @@ export function StocksTab(): React.JSX.Element {
       key: 'action',
       render: (_, record: Stock): React.JSX.Element => (
         <Space size="small">
+          <Tooltip title={alerts[record.symbol] ? (alerts[record.symbol].enabled !== false ? '暂停预警' : '恢复预警') : '未设置预警'}>
+            <Switch
+              size="small"
+              checked={!!alerts[record.symbol] && alerts[record.symbol].enabled !== false}
+              disabled={!alerts[record.symbol]}
+              onChange={(checked): void => {
+                handleAlertEnabledChange(record.symbol, checked)
+              }}
+            />
+          </Tooltip>
           <Tooltip title="预警设置">
             <Button
               type="text"
-              icon={alerts[record.symbol] ? <BellFilled style={{ color: '#faad14' }} /> : <BellOutlined />}
+              icon={
+                alerts[record.symbol] ? (
+                  alertsGlobalPaused || alerts[record.symbol].enabled === false ? (
+                    <BellFilled style={{ color: '#bfbfbf' }} />
+                  ) : (
+                    <BellFilled style={{ color: '#faad14' }} />
+                  )
+                ) : (
+                  <BellOutlined />
+                )
+              }
               size="small"
               onClick={() => openAlertModal(record)}
             />
@@ -382,28 +441,49 @@ export function StocksTab(): React.JSX.Element {
 
   return (
     <div style={{ padding: '0 16px' }}>
-      <div style={{ marginBottom: 16, display: 'flex', gap: 8 }}>
-        <Select
-          showSearch
-          value={selectedStock ? selectedStock.symbol : null}
-          placeholder="输入股票代码/拼音/名称"
-          style={{ width: 300 }}
-          defaultActiveFirstOption={false}
-          showArrow={false}
-          filterOption={false}
-          onSearch={handleSearch}
-          onChange={handleSelect}
-          notFoundContent={searchLoading ? <Spin size="small" /> : null}
-          options={options}
-        />
-        <Button
-          type="primary"
-          icon={<PlusOutlined />}
-          onClick={handleAdd}
-          disabled={!selectedStock}
-        >
-          添加
-        </Button>
+      <div
+        style={{
+          marginBottom: 16,
+          display: 'flex',
+          gap: 8,
+          justifyContent: 'space-between',
+          alignItems: 'center'
+        }}
+      >
+        <div style={{ display: 'flex', gap: 8 }}>
+          <Select
+            showSearch
+            value={selectedStock ? selectedStock.symbol : null}
+            placeholder="输入股票代码/拼音/名称"
+            style={{ width: 300 }}
+            defaultActiveFirstOption={false}
+            showArrow={false}
+            filterOption={false}
+            onSearch={handleSearch}
+            onChange={handleSelect}
+            notFoundContent={searchLoading ? <Spin size="small" /> : null}
+            options={options}
+          />
+          <Button
+            type="primary"
+            icon={<PlusOutlined />}
+            onClick={handleAdd}
+            disabled={!selectedStock}
+          >
+            添加
+          </Button>
+        </div>
+        <Space size="small">
+          <span>全部预警</span>
+          <Switch
+            checked={!alertsGlobalPaused}
+            checkedChildren="启用"
+            unCheckedChildren="暂停"
+            onChange={(checked): void => {
+              saveAlertsGlobalPaused(!checked)
+            }}
+          />
+        </Space>
       </div>
       <DndContext
         sensors={sensors}
@@ -459,6 +539,14 @@ export function StocksTab(): React.JSX.Element {
         ]}
       >
         <Form form={form} layout="vertical">
+          <Form.Item
+            label="启用预警"
+            name="enabled"
+            valuePropName="checked"
+            style={{ marginBottom: 12 }}
+          >
+            <Switch checkedChildren="启用" unCheckedChildren="暂停" />
+          </Form.Item>
           <Form.Item label="触发条件" style={{ marginBottom: 12 }}>
             <Space.Compact style={{ width: '100%' }}>
               <Form.Item name="type" noStyle rules={[{ required: true }]}>
