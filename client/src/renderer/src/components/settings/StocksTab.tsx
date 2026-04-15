@@ -744,26 +744,6 @@ export function StocksTab(): React.JSX.Element {
             添加
           </Button>
         </div>
-        <Space size="small">
-          <Space size={6}>
-            <span>全部预警</span>
-            <Switch
-              checked={!alertsGlobalPaused}
-              checkedChildren="开启"
-              unCheckedChildren="暂停"
-              onChange={(checked): void => {
-                saveAlertsGlobalPaused(!checked)
-              }}
-            />
-          </Space>
-          <Divider type="vertical" style={{ margin: '0 4px' }} />
-          <Tooltip title={`免打扰：${dndStatusText}`}>
-            <Button type="link" size="small" onClick={() => setIsDndModalVisible(true)} style={{ padding: 0 }}>
-              免打扰
-            </Button>
-          </Tooltip>
-          <span style={{ color: 'rgba(0,0,0,0.45)' }}>{dndStatusText}</span>
-        </Space>
       </div>
       <DndContext
         sensors={sensors}
@@ -787,6 +767,38 @@ export function StocksTab(): React.JSX.Element {
           />
         </SortableContext>
       </DndContext>
+
+      <div style={{ padding: '12px 0 0 0' }}>
+        <Divider style={{ margin: 0 }} />
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'flex-end',
+            gap: 8,
+            padding: '10px 0 0 0'
+          }}
+        >
+          <Space size={6}>
+            <span>全部预警</span>
+            <Switch
+              checked={!alertsGlobalPaused}
+              checkedChildren="开启"
+              unCheckedChildren="暂停"
+              onChange={(checked): void => {
+                saveAlertsGlobalPaused(!checked)
+              }}
+            />
+          </Space>
+          <Divider type="vertical" style={{ margin: '0 4px' }} />
+          <Tooltip title={`免打扰：${dndStatusText}`}>
+            <Button type="link" size="small" onClick={() => setIsDndModalVisible(true)} style={{ padding: 0 }}>
+              免打扰
+            </Button>
+          </Tooltip>
+          <span style={{ color: 'rgba(0,0,0,0.45)' }}>{dndStatusText}</span>
+        </div>
+      </div>
 
       <Modal
         title="预警设置"
