@@ -33,6 +33,8 @@ export interface AlertConfig {
   message: string
   method: 'popup' | 'sound' | 'blink'
   enabled: boolean
+  cooldownSeconds?: number
+  hysteresis?: number
 }
 
 export interface OptionData {
@@ -131,7 +133,16 @@ export function StocksTab(): React.JSX.Element {
               if (config && typeof config === 'object' && typeof config.enabled !== 'boolean') {
                 hasLegacyAlert = true
               }
-              return [symbol, { ...(safeConfig as AlertConfig), enabled: safeConfig.enabled !== false }]
+              const cooldownSeconds =
+                typeof (safeConfig as any).cooldownSeconds === 'number' ? (safeConfig as any).cooldownSeconds : 60
+              const hysteresis = typeof (safeConfig as any).hysteresis === 'number' ? (safeConfig as any).hysteresis : 0
+              if (typeof (safeConfig as any).cooldownSeconds !== 'number' || typeof (safeConfig as any).hysteresis !== 'number') {
+                hasLegacyAlert = true
+              }
+              return [
+                symbol,
+                { ...(safeConfig as AlertConfig), enabled: safeConfig.enabled !== false, cooldownSeconds, hysteresis }
+              ]
             })
           ) as Record<string, AlertConfig>
           setAlerts(normalizedAlerts)
@@ -187,7 +198,12 @@ export function StocksTab(): React.JSX.Element {
     setCurrentAlertSymbol(record.symbol)
     const existingAlert = alerts[record.symbol]
     if (existingAlert) {
-      form.setFieldsValue({ ...existingAlert, enabled: existingAlert.enabled !== false })
+      form.setFieldsValue({
+        ...existingAlert,
+        enabled: existingAlert.enabled !== false,
+        cooldownSeconds: typeof existingAlert.cooldownSeconds === 'number' ? existingAlert.cooldownSeconds : 60,
+        hysteresis: typeof existingAlert.hysteresis === 'number' ? existingAlert.hysteresis : 0
+      })
     } else {
       form.setFieldsValue({
         type: 'price',
@@ -195,7 +211,9 @@ export function StocksTab(): React.JSX.Element {
         threshold: undefined,
         message: `\${股票名称}当前价格\${价格}已突破\${阈值}`,
         method: 'popup',
-        enabled: true
+        enabled: true,
+        cooldownSeconds: 60,
+        hysteresis: 0
       })
     }
     setIsAlertModalVisible(true)
@@ -596,8 +614,34 @@ export function StocksTab(): React.JSX.Element {
           </Form.Item>
 
           <Form.Item label="提醒文案" name="message" style={{ marginBottom: 12 }} rules={[{ required: true, max: 50, message: '文案不能为空，且最多 50 字' }]}>
+          <Form.Item label="触发控制" style={{ marginBottom: 12 }}>
+            <Space.Compact style={{ width: '100%' }}>
+              <Form.Item name="cooldownSeconds" noStyle rules={[{ required: true, message: '请输入冷却时间' }]}>
+                <InputNumber style={{ width: '50%' }} min={0} max={3600} step={1} placeholder="冷却(秒)" />
+              </Form.Item>
+              <Form.Item
+                noStyle
+                shouldUpdate={(prevValues, currentValues) => prevValues.type !== currentValues.type}
+              >
+                {({ getFieldValue }): React.ReactNode => {
+                  const type = getFieldValue('type')
+                  return (
+                    <Form.Item name="hysteresis" noStyle rules={[{ required: true, message: '请输入回撤阈值' }]}>
+                      {type === 'price' ? (
+                        <InputNumber style={{ width: '50%' }} min={0} max={10000} step={0.01} precision={2} placeholder="回撤(元)" />
+                      ) : (
+                        <InputNumber style={{ width: '50%' }} min={0} max={20} step={0.1} placeholder="回撤(%点)" />
+                      )}
+                    </Form.Item>
+                  )
+                }}
+              </Form.Item>
+            </Space.Compact>
+          </Form.Item>
+
             <Input.TextArea autoSize={{ minRows: 2, maxRows: 3 }} maxLength={50} showCount placeholder="请输入提醒文案" />
           </Form.Item>
+
 
           <Form.Item label="提醒方式" name="method" style={{ marginBottom: 12 }} rules={[{ required: true }]}>
             <Radio.Group>
