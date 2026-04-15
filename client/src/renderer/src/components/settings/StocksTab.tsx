@@ -115,6 +115,7 @@ export function StocksTab(): React.JSX.Element {
   const [isAlertModalVisible, setIsAlertModalVisible] = useState<boolean>(false)
   const [currentAlertSymbol, setCurrentAlertSymbol] = useState<string | null>(null)
   const [form] = Form.useForm()
+  const alertModalEnabled = Form.useWatch('enabled', form)
 
   const fetchRef = useRef<number>(0)
 
@@ -204,9 +205,10 @@ export function StocksTab(): React.JSX.Element {
     try {
       const values = await form.validateFields()
       if (currentAlertSymbol) {
+        const enabled = form.getFieldValue('enabled')
         const newAlerts = {
           ...alerts,
-          [currentAlertSymbol]: { ...(values as AlertConfig), enabled: values.enabled !== false }
+          [currentAlertSymbol]: { ...(values as AlertConfig), enabled: enabled !== false }
         }
         await saveAlerts(newAlerts)
       }
@@ -516,20 +518,35 @@ export function StocksTab(): React.JSX.Element {
         onCancel={handleAlertModalCancel}
         destroyOnClose
         footer={[
-          <Button
-            key="delete"
-            danger
-            onClick={() => {
-              if (currentAlertSymbol) {
-                handleDeleteAlert(currentAlertSymbol)
-                setIsAlertModalVisible(false)
+          <Space key="left" size="small" style={{ float: 'left' }}>
+            <Button
+              danger
+              onClick={() => {
+                if (currentAlertSymbol) {
+                  handleDeleteAlert(currentAlertSymbol)
+                  setIsAlertModalVisible(false)
+                }
+              }}
+              disabled={!currentAlertSymbol || !alerts[currentAlertSymbol]}
+            >
+              清除预警
+            </Button>
+            <Switch
+              checked={
+                typeof alertModalEnabled === 'boolean'
+                  ? alertModalEnabled
+                  : currentAlertSymbol && alerts[currentAlertSymbol]
+                    ? alerts[currentAlertSymbol].enabled !== false
+                    : true
               }
-            }}
-            style={{ float: 'left' }}
-            disabled={!currentAlertSymbol || !alerts[currentAlertSymbol]}
-          >
-            清除预警
-          </Button>,
+              checkedChildren="启用"
+              unCheckedChildren="暂停"
+              disabled={!currentAlertSymbol}
+              onChange={(checked): void => {
+                form.setFieldValue('enabled', checked)
+              }}
+            />
+          </Space>,
           <Button key="cancel" onClick={handleAlertModalCancel}>
             取消
           </Button>,
@@ -539,14 +556,6 @@ export function StocksTab(): React.JSX.Element {
         ]}
       >
         <Form form={form} layout="vertical">
-          <Form.Item
-            label="启用预警"
-            name="enabled"
-            valuePropName="checked"
-            style={{ marginBottom: 12 }}
-          >
-            <Switch checkedChildren="启用" unCheckedChildren="暂停" />
-          </Form.Item>
           <Form.Item label="触发条件" style={{ marginBottom: 12 }}>
             <Space.Compact style={{ width: '100%' }}>
               <Form.Item name="type" noStyle rules={[{ required: true }]}>
