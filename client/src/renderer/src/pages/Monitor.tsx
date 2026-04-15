@@ -42,6 +42,7 @@ interface AlertConfig {
   threshold: number
   message: string
   method: 'popup' | 'sound' | 'blink'
+  enabled?: boolean
 }
 
 const DEFAULT_SETTINGS: Settings = {
@@ -78,6 +79,8 @@ function Monitor(): React.JSX.Element {
   const [isWindowHidden, setIsWindowHidden] = useState(false)
   const dragPosRef = useRef({ x: 0, y: 0 })
   const triggeredKeys = useRef<Set<string>>(new Set())
+  const lastGlobalPausedRef = useRef<boolean>(false)
+  const lastEnabledMapRef = useRef<Record<string, boolean>>({})
 
   useEffect(() => {
     const handleLock = (_event: any, locked: boolean) => {
@@ -195,12 +198,40 @@ function Monitor(): React.JSX.Element {
 
       setStockData(newData)
 
+      const alertsGlobalPaused = await window.api.store.get('alertsGlobalPaused')
+      const isGlobalPaused = alertsGlobalPaused === true
+      if (lastGlobalPausedRef.current && !isGlobalPaused) {
+        triggeredKeys.current.clear()
+      }
+      lastGlobalPausedRef.current = isGlobalPaused
+
+      const clearTriggeredKeysForSymbol = (symbol: string) => {
+        for (const k of triggeredKeys.current) {
+          if (k.startsWith(`${symbol}-`)) {
+            triggeredKeys.current.delete(k)
+          }
+        }
+      }
+
+      if (isGlobalPaused) return
+
       const alerts = await window.api.store.get('alerts')
       if (alerts) {
         visibleStocks.forEach((stock: Stock) => {
           const data = newData[stock.symbol]
           const alert = alerts[stock.symbol] as AlertConfig
           if (data && alert) {
+            const enabled = alert.enabled !== false
+            const lastEnabled = lastEnabledMapRef.current[stock.symbol]
+            if (lastEnabled === false && enabled) {
+              clearTriggeredKeysForSymbol(stock.symbol)
+            }
+            lastEnabledMapRef.current[stock.symbol] = enabled
+            if (!enabled) {
+              clearTriggeredKeysForSymbol(stock.symbol)
+              return
+            }
+
             const value = alert.type === 'price' ? parseFloat(data.price) : parseFloat(data.changePct)
             if (isNaN(value)) return
 
