@@ -11,6 +11,7 @@ let tray: Tray | null = null
 let settingsWindow: BrowserWindow | null = null
 let mainWindow: BrowserWindow | null = null
 let aboutWindow: BrowserWindow | null = null
+let isPanelLocked = false
 
 function openAbout(): void {
   if (aboutWindow) {
@@ -90,19 +91,25 @@ function openSettings(): void {
   }
 }
 
-function createTray(): void {
-  tray = new Tray(icon)
-  const contextMenu = Menu.buildFromTemplate([
+function setPanelLocked(locked: boolean): void {
+  isPanelLocked = locked
+  if (mainWindow) {
+    mainWindow.setIgnoreMouseEvents(locked, { forward: true })
+    mainWindow.webContents.send('window-locked', locked)
+  }
+  if (tray) {
+    tray.setContextMenu(buildTrayMenu())
+  }
+}
+
+function buildTrayMenu(): Menu {
+  return Menu.buildFromTemplate([
     {
       label: '锁定面板',
       type: 'checkbox',
-      checked: false,
+      checked: isPanelLocked,
       click: (menuItem) => {
-        const locked = menuItem.checked
-        if (mainWindow) {
-          mainWindow.setIgnoreMouseEvents(locked, { forward: true })
-          mainWindow.webContents.send('window-locked', locked)
-        }
+        setPanelLocked(menuItem.checked)
       }
     },
     { type: 'separator' },
@@ -119,8 +126,12 @@ function createTray(): void {
       }
     }
   ] as (Electron.MenuItemConstructorOptions | Electron.MenuItem)[])
+}
+
+function createTray(): void {
+  tray = new Tray(icon)
   tray.setToolTip('stealth-ticker')
-  tray.setContextMenu(contextMenu)
+  tray.setContextMenu(buildTrayMenu())
 }
 
 function createWindow(): void {
@@ -234,6 +245,15 @@ app.whenReady().then(() => {
 
   ipcMain.on('show-context-menu', (event) => {
     const template: (Electron.MenuItemConstructorOptions | Electron.MenuItem)[] = [
+      {
+        label: '锁定面板',
+        type: 'checkbox',
+        checked: isPanelLocked,
+        click: (menuItem) => {
+          setPanelLocked(menuItem.checked)
+        }
+      },
+      { type: 'separator' },
       { label: '设置', click: openSettings },
       {
         label: '关于',
