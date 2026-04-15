@@ -43,6 +43,8 @@ interface AlertConfig {
   message: string
   method: 'popup' | 'sound' | 'blink'
   enabled?: boolean
+  cooldownSeconds?: number
+  hysteresis?: number
 }
 
 const DEFAULT_SETTINGS: Settings = {
@@ -79,6 +81,7 @@ function Monitor(): React.JSX.Element {
   const [isWindowHidden, setIsWindowHidden] = useState(false)
   const dragPosRef = useRef({ x: 0, y: 0 })
   const triggeredKeys = useRef<Set<string>>(new Set())
+  const lastTriggeredAtRef = useRef<Map<string, number>>(new Map())
   const lastGlobalPausedRef = useRef<boolean>(false)
   const lastEnabledMapRef = useRef<Record<string, boolean>>({})
 
@@ -212,8 +215,56 @@ function Monitor(): React.JSX.Element {
           }
         }
       }
+      const clearLastTriggeredAtForSymbol = (symbol: string) => {
+        for (const k of lastTriggeredAtRef.current.keys()) {
+          if (k.startsWith(`${symbol}-`)) {
+            lastTriggeredAtRef.current.delete(k)
+          }
+        }
+      }
 
       if (isGlobalPaused) return
+
+      const parseTimeToMinutes = (value: unknown): number | null => {
+        if (typeof value !== 'string') return null
+        const m = value.match(/^(\d{1,2}):(\d{2})$/)
+        if (!m) return null
+        const hh = Number(m[1])
+        const mm = Number(m[2])
+        if (!Number.isFinite(hh) || !Number.isFinite(mm)) return null
+        if (hh < 0 || hh > 23 || mm < 0 || mm > 59) return null
+        return hh * 60 + mm
+      }
+
+      const nowMs = Date.now()
+      const alertsTempPausedUntilRaw = await window.api.store.get('alertsTempPausedUntil')
+      const alertsTempPausedUntil =
+        typeof alertsTempPausedUntilRaw === 'number' ? alertsTempPausedUntilRaw : Number(alertsTempPausedUntilRaw)
+      const tempPausedActive = Number.isFinite(alertsTempPausedUntil) && alertsTempPausedUntil > nowMs
+
+      const alertsDndEnabled = (await window.api.store.get('alertsDndEnabled')) === true
+      const alertsDndStart = await window.api.store.get('alertsDndStart')
+      const alertsDndEnd = await window.api.store.get('alertsDndEnd')
+      const alertsDndAllowedMethodsRaw = await window.api.store.get('alertsDndAllowedMethods')
+      const alertsDndAllowedMethods = Array.isArray(alertsDndAllowedMethodsRaw)
+        ? (alertsDndAllowedMethodsRaw.filter((x) => typeof x === 'string') as string[])
+        : []
+
+      const startMin = parseTimeToMinutes(alertsDndStart)
+      const endMin = parseTimeToMinutes(alertsDndEnd)
+      const nowDate = new Date(nowMs)
+      const nowMin = nowDate.getHours() * 60 + nowDate.getMinutes()
+      const rangeActive =
+        alertsDndEnabled &&
+        startMin !== null &&
+        endMin !== null &&
+        (startMin === endMin
+          ? true
+          : startMin < endMin
+            ? nowMin >= startMin && nowMin < endMin
+            : nowMin >= startMin || nowMin < endMin)
+
+      const isDndActive = tempPausedActive || rangeActive
 
       const alerts = await window.api.store.get('alerts')
       if (alerts) {
@@ -225,6 +276,7 @@ function Monitor(): React.JSX.Element {
             const lastEnabled = lastEnabledMapRef.current[stock.symbol]
             if (lastEnabled === false && enabled) {
               clearTriggeredKeysForSymbol(stock.symbol)
+              clearLastTriggeredAtForSymbol(stock.symbol)
             }
             lastEnabledMapRef.current[stock.symbol] = enabled
             if (!enabled) {
@@ -242,25 +294,42 @@ function Monitor(): React.JSX.Element {
               isTriggered = true
             }
 
-            const key = `${stock.symbol}-${alert.type}-${alert.condition}`
+            const key = `${stock.symbol}-${alert.type}-${alert.condition}-${alert.threshold}`
+            const cooldownSeconds = typeof alert.cooldownSeconds === 'number' ? Math.max(0, alert.cooldownSeconds) : 60
+            const hysteresis = typeof alert.hysteresis === 'number' ? Math.max(0, alert.hysteresis) : 0
+            const resetTriggered =
+              alert.condition === 'above'
+                ? value < alert.threshold - hysteresis
+                : value > alert.threshold + hysteresis
 
             if (isTriggered) {
               if (!triggeredKeys.current.has(key)) {
                 triggeredKeys.current.add(key)
-                
-                let message = alert.message || `${stock.name}当前${alert.type === 'price' ? '价格' : '涨跌幅'}${alert.type === 'price' ? data.price : data.changePct}已突破${alert.threshold}`
-                message = message.replace(/\$\{股票名称\}/g, stock.name)
-                  .replace(/\$\{价格\}/g, data.price)
-                  .replace(/\$\{阈值\}/g, String(alert.threshold))
 
-                if (alert.method === 'popup') {
-                  const notification = new Notification('股票预警', { body: message })
-                  setTimeout(() => notification.close(), 3000)
-                } else if (alert.method === 'sound' || alert.method === 'blink') {
-                  window.electron.ipcRenderer.send('trigger-alert', { method: alert.method, message })
+                const lastTriggeredAt = lastTriggeredAtRef.current.get(key) || 0
+                if (cooldownSeconds === 0 || nowMs - lastTriggeredAt >= cooldownSeconds * 1000) {
+                  lastTriggeredAtRef.current.set(key, nowMs)
+
+                  const suppressByDnd =
+                    isDndActive &&
+                    (alertsDndAllowedMethods.length === 0 || !alertsDndAllowedMethods.includes(alert.method))
+
+                  if (!suppressByDnd) {
+                    let message = alert.message || `${stock.name}当前${alert.type === 'price' ? '价格' : '涨跌幅'}${alert.type === 'price' ? data.price : data.changePct}已突破${alert.threshold}`
+                    message = message.replace(/\$\{股票名称\}/g, stock.name)
+                      .replace(/\$\{价格\}/g, data.price)
+                      .replace(/\$\{阈值\}/g, String(alert.threshold))
+
+                    if (alert.method === 'popup') {
+                      const notification = new Notification('股票预警', { body: message })
+                      setTimeout(() => notification.close(), 3000)
+                    } else if (alert.method === 'sound' || alert.method === 'blink') {
+                      window.electron.ipcRenderer.send('trigger-alert', { method: alert.method, message })
+                    }
+                  }
                 }
               }
-            } else {
+            } else if (resetTriggered) {
               if (triggeredKeys.current.has(key)) {
                 triggeredKeys.current.delete(key)
               }
