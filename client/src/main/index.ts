@@ -75,6 +75,8 @@ function openSettings(): void {
       webSecurity: false
     }
   })
+  settingsWindow.setMenu(null)
+  settingsWindow.setMenuBarVisibility(false)
 
   settingsWindow.on('ready-to-show', () => {
     settingsWindow?.show()
