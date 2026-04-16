@@ -1,0 +1,4 @@
+- [x] 免打扰关闭状态的图标已替换为 `SettingOutlined`。
+- [x] 胶囊内文本右侧带有 `RightOutlined` 箭头图标。
+- [x] 鼠标悬停在胶囊上时会显示 "点击设置免打扰" 的 Tooltip。
+- [x] 运行 `npm run typecheck:web` 没有 TypeScript 错误。
