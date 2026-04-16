@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react'
-import { Table, Button, Popconfirm, Switch, message, Select, Spin, Modal, Form, Radio, InputNumber, Input, Space, Tooltip, Divider } from 'antd'
+import { Table, Button, Popconfirm, Switch, message, Select, Spin, Modal, Form, Radio, InputNumber, Input, Space, Tooltip, Divider, Tag } from 'antd'
 import { PlusOutlined, DeleteOutlined, DragOutlined, BellOutlined, BellFilled } from '@ant-design/icons'
 import {
   DndContext,
@@ -791,12 +791,15 @@ export function StocksTab(): React.JSX.Element {
             />
           </Space>
           <Divider type="vertical" style={{ margin: '0 4px' }} />
-          <Tooltip title={`免打扰：${dndStatusText}`}>
-            <Button type="link" size="small" onClick={() => setIsDndModalVisible(true)} style={{ padding: 0 }}>
-              免打扰
-            </Button>
-          </Tooltip>
-          <span style={{ color: 'rgba(0,0,0,0.45)' }}>{dndStatusText}</span>
+          <Button type="link" size="small" onClick={() => setIsDndModalVisible(true)} style={{ padding: 0 }}>
+            免打扰
+          </Button>
+          <Tag
+            color={isDndActive ? 'orange' : alertsDndEnabled ? 'blue' : 'default'}
+            style={{ marginInlineEnd: 0, userSelect: 'none' }}
+          >
+            {dndStatusText}
+          </Tag>
         </div>
       </div>
 
