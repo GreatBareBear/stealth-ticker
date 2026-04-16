@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { Table, Button, Popconfirm, Switch, message, Select, Spin, Modal, Form, Radio, InputNumber, Input, Space, Tooltip, Divider, Tag } from 'antd'
-import { PlusOutlined, DeleteOutlined, DragOutlined, BellOutlined, BellFilled } from '@ant-design/icons'
+import { PlusOutlined, DeleteOutlined, DragOutlined, BellOutlined, BellFilled, MinusCircleOutlined, ClockCircleOutlined } from '@ant-design/icons'
 import {
   DndContext,
   PointerSensor,
@@ -587,13 +587,27 @@ export function StocksTab(): React.JSX.Element {
   const isTempPausedActive = alertsTempPausedUntil > nowTick
   const isTimeDndActive = alertsDndEnabled && isInDndTimeRange(new Date(nowTick), alertsDndStart, alertsDndEnd)
   const isDndActive = isTempPausedActive || isTimeDndActive
-  const dndStatusText = isDndActive
-    ? isTempPausedActive
-      ? `进行中（剩余 ${formatRemaining(alertsTempPausedUntil - nowTick)}）`
-      : '进行中'
-    : alertsDndEnabled
-      ? '已开启'
-      : '未开启'
+  
+  let dndStatusText = ''
+  let dndTagColor = 'default'
+  let dndTagIcon = <MinusCircleOutlined />
+
+  if (isDndActive) {
+    if (isTempPausedActive) {
+      dndStatusText = `免打扰: 剩余 ${formatRemaining(alertsTempPausedUntil - nowTick)}`
+      dndTagColor = 'warning'
+      dndTagIcon = <ClockCircleOutlined />
+    } else {
+      dndStatusText = '免打扰: 生效中'
+      dndTagColor = 'processing'
+      dndTagIcon = <ClockCircleOutlined />
+    }
+  } else if (alertsDndEnabled) {
+    dndStatusText = '免打扰: 开启'
+    dndTagColor = 'blue'
+  } else {
+    dndStatusText = '免打扰: 关闭'
+  }
 
   return (
     <div style={{ padding: '0 16px' }}>
@@ -791,12 +805,11 @@ export function StocksTab(): React.JSX.Element {
             />
           </Space>
           <Divider type="vertical" style={{ margin: '0 4px' }} />
-          <Button type="link" size="small" onClick={() => setIsDndModalVisible(true)} style={{ padding: 0 }}>
-            免打扰
-          </Button>
           <Tag
-            color={isDndActive ? 'orange' : alertsDndEnabled ? 'blue' : 'default'}
-            style={{ marginInlineEnd: 0, userSelect: 'none' }}
+            color={dndTagColor}
+            icon={dndTagIcon}
+            onClick={() => setIsDndModalVisible(true)}
+            style={{ marginInlineEnd: 0, cursor: 'pointer', userSelect: 'none' }}
           >
             {dndStatusText}
           </Tag>
