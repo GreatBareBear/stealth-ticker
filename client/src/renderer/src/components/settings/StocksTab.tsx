@@ -587,6 +587,8 @@ export function StocksTab(): React.JSX.Element {
   const isTempPausedActive = alertsTempPausedUntil > nowTick
   const isTimeDndActive = alertsDndEnabled && isInDndTimeRange(new Date(nowTick), alertsDndStart, alertsDndEnd)
   const isDndActive = isTempPausedActive || isTimeDndActive
+  const isScheduleEnabledButInactive = alertsDndEnabled && !isDndActive
+  const dndScheduleRangeText = `${alertsDndStart} - ${alertsDndEnd}`
   
   let dndStatusText = ''
   let dndBtnType: 'text' | 'primary' = 'text'
@@ -605,6 +607,14 @@ export function StocksTab(): React.JSX.Element {
     dndStatusText = '免打扰'
   }
 
+  const dndModalStatusText = isDndActive
+    ? dndStatusText
+    : isScheduleEnabledButInactive
+      ? `已开启时间段（未生效）${dndScheduleRangeText}`
+      : '未开启'
+
+  const dndIcon = <ClockCircleOutlined style={isScheduleEnabledButInactive ? { color: '#1677ff' } : undefined} />
+
   return (
     <div style={{ padding: '0 16px' }}>
       <Modal
@@ -622,7 +632,7 @@ export function StocksTab(): React.JSX.Element {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div>
               <div style={{ fontWeight: 600 }}>当前状态</div>
-              <div style={{ color: 'rgba(0,0,0,0.65)' }}>{isDndActive ? dndStatusText : '未开启'}</div>
+              <div style={{ color: 'rgba(0,0,0,0.65)' }}>{dndModalStatusText}</div>
             </div>
             <Button
               onClick={() => {
@@ -804,12 +814,25 @@ export function StocksTab(): React.JSX.Element {
           <Button
             type={dndBtnType}
             danger={dndBtnDanger}
-            icon={<ClockCircleOutlined />}
+            icon={dndIcon}
             size="small"
             onClick={() => setIsDndModalVisible(true)}
             style={{ marginInlineEnd: 0, padding: '0 8px' }}
           >
-            {dndStatusText}
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+              <span>{dndStatusText}</span>
+              {isScheduleEnabledButInactive ? (
+                <span
+                  style={{
+                    width: 6,
+                    height: 6,
+                    borderRadius: 999,
+                    background: '#1677ff',
+                    opacity: 0.7
+                  }}
+                />
+              ) : null}
+            </span>
           </Button>
         </div>
       </div>
