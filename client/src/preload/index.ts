@@ -7,7 +7,8 @@ const api = {
     get: (key: string) => ipcRenderer.invoke('store:get', key),
     set: (key: string, value: any) => ipcRenderer.invoke('store:set', key, value),
     delete: (key: string) => ipcRenderer.invoke('store:delete', key)
-  }
+  },
+  tempUnlock: (unlock: boolean) => ipcRenderer.send('temp-unlock', unlock)
 }
 
 // Use `contextBridge` APIs to expose Electron APIs to

@@ -11,7 +11,7 @@ let tray: Tray | null = null
 let settingsWindow: BrowserWindow | null = null
 let mainWindow: BrowserWindow | null = null
 let aboutWindow: BrowserWindow | null = null
-let isPanelLocked = false
+let isPanelLocked = store.get('panelLocked') === true
 
 function openAbout(): void {
   if (aboutWindow) {
@@ -95,6 +95,7 @@ function openSettings(): void {
 
 function setPanelLocked(locked: boolean): void {
   isPanelLocked = locked
+  store.set('panelLocked', locked)
   if (mainWindow) {
     mainWindow.setIgnoreMouseEvents(locked, { forward: true })
     mainWindow.webContents.send('window-locked', locked)
@@ -260,7 +261,8 @@ app.whenReady().then(() => {
     'alertsDndAllowedMethods',
     'chartSettings',
     'otherSettings',
-    'dashboard'
+    'dashboard',
+    'panelLocked'
   ]
 
   function isValidKey(key: string): boolean {
@@ -348,6 +350,13 @@ app.whenReady().then(() => {
     }
   })
 
+  ipcMain.on('temp-unlock', (_event, unlock: boolean) => {
+    if (!isPanelLocked) return
+    if (mainWindow) {
+      mainWindow.setIgnoreMouseEvents(!unlock, { forward: true })
+    }
+  })
+
   let blinkInterval: NodeJS.Timeout | null = null
 
   ipcMain.on('trigger-alert', (_event, { method, message: _message }: { method: string; message?: string }) => {
@@ -401,6 +410,7 @@ app.whenReady().then(() => {
   }
   createWindow()
   registerBossKey(initialSettings)
+  setPanelLocked(isPanelLocked)
 
   app.on('activate', function () {
     // On macOS it's common to re-create a window in the app when the

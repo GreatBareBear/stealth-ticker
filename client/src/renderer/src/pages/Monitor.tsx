@@ -147,6 +147,48 @@ function Monitor(): React.JSX.Element {
     }
   }, [])
 
+  React.useEffect(() => {
+    let isHovering = false
+    let isTempUnlocked = false
+
+    const checkUnlock = (shouldUnlock: boolean) => {
+      const active = isHovering && shouldUnlock
+      if (active !== isTempUnlocked) {
+        isTempUnlocked = active
+        window.api.tempUnlock(active)
+      }
+    }
+
+    const handleMouseMove = (e: MouseEvent) => {
+      isHovering = true
+      checkUnlock(e.altKey)
+    }
+
+    const handleMouseLeave = () => {
+      isHovering = false
+      checkUnlock(false)
+    }
+
+    const handleKeyUp = (e: KeyboardEvent) => {
+      if (e.key === 'Alt') {
+        checkUnlock(false)
+      }
+    }
+
+    document.addEventListener('mousemove', handleMouseMove)
+    document.addEventListener('mouseleave', handleMouseLeave)
+    document.addEventListener('keyup', handleKeyUp)
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove)
+      document.removeEventListener('mouseleave', handleMouseLeave)
+      document.removeEventListener('keyup', handleKeyUp)
+      if (isTempUnlocked) {
+        window.api.tempUnlock(false)
+      }
+    }
+  }, [])
+
   const handleContextMenu = (e: React.MouseEvent): void => {
     e.preventDefault()
     if (isLocked) return

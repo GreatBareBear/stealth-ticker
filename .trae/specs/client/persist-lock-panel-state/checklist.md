@@ -1,0 +1,7 @@
+- [x] 主进程通过 `electron-store` 读取并写入了 `panelLocked` 状态。
+- [x] `panelLocked` 已被添加到 `ALLOWED_STORE_KEYS` 以允许 IPC 操作。
+- [x] 启动应用时，如果上次为锁定状态，则本次启动窗口自动设为锁定。
+- [x] `preload/index.ts` 和 `env.d.ts` 已经正确暴露了 `tempUnlock`。
+- [x] 在主窗口（`Monitor.tsx`）按住 `Alt` 键移动鼠标时，主进程能够临时解锁鼠标穿透。
+- [x] 松开 `Alt` 键或鼠标离开窗口时，重新恢复锁定穿透。
+- [x] `npm run typecheck:main` 和 `npm run typecheck:web` 均没有 TypeScript 错误。
