@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react'
-import { Table, Button, Popconfirm, Switch, message, Select, Spin, Modal, Form, Radio, InputNumber, Input, Space, Tooltip, Divider } from 'antd'
+import { Table, Button, Popconfirm, Switch, message, Select, Spin, Modal, Form, Radio, InputNumber, Input, Space, Tooltip, Divider, Badge } from 'antd'
 import { PlusOutlined, DeleteOutlined, DragOutlined, BellOutlined, BellFilled, ClockCircleOutlined } from '@ant-design/icons'
 import {
   DndContext,
@@ -590,30 +590,35 @@ export function StocksTab(): React.JSX.Element {
   const isScheduleEnabledButInactive = alertsDndEnabled && !isDndActive
   const dndScheduleRangeText = `${alertsDndStart} - ${alertsDndEnd}`
   
-  let dndStatusText = ''
+  let dndEntryText = ''
   let dndBtnType: 'text' | 'primary' = 'text'
   let dndBtnDanger = false
+  let dndBtnStyle: React.CSSProperties | undefined = undefined
+  let dndIconStyle: React.CSSProperties | undefined = undefined
 
   if (isDndActive) {
     if (isTempPausedActive) {
-      dndStatusText = `剩余 ${formatRemaining(alertsTempPausedUntil - nowTick)}`
-      dndBtnType = 'primary'
+      dndEntryText = `剩余 ${formatRemaining(alertsTempPausedUntil - nowTick)}`
       dndBtnDanger = true
     } else {
-      dndStatusText = '免打扰生效中'
-      dndBtnType = 'primary'
+      dndEntryText = '免打扰中'
+      dndBtnStyle = { color: '#fa8c16' }
+      dndIconStyle = { color: '#fa8c16' }
     }
   } else {
-    dndStatusText = '免打扰'
+    dndEntryText = '免打扰'
   }
 
-  const dndModalStatusText = isDndActive
-    ? dndStatusText
-    : isScheduleEnabledButInactive
-      ? `已开启时间段（未生效）${dndScheduleRangeText}`
-      : '未开启'
+  const dndModalStatusText = isTempPausedActive
+    ? `剩余 ${formatRemaining(alertsTempPausedUntil - nowTick)}`
+    : isTimeDndActive
+      ? `免打扰生效中 ${dndScheduleRangeText}`
+      : isScheduleEnabledButInactive
+        ? `已开启时间段（未生效）${dndScheduleRangeText}`
+        : '未开启'
 
-  const dndIcon = <ClockCircleOutlined style={isScheduleEnabledButInactive ? { color: '#1677ff' } : undefined} />
+  const dndBaseIcon = <ClockCircleOutlined style={dndIconStyle} />
+  const dndIcon = isScheduleEnabledButInactive ? <Badge color="#1677ff" dot>{dndBaseIcon}</Badge> : dndBaseIcon
 
   return (
     <div style={{ padding: '0 16px' }}>
@@ -817,22 +822,9 @@ export function StocksTab(): React.JSX.Element {
             icon={dndIcon}
             size="small"
             onClick={() => setIsDndModalVisible(true)}
-            style={{ marginInlineEnd: 0, padding: '0 8px' }}
+            style={{ marginInlineEnd: 0, padding: '0 8px', ...dndBtnStyle }}
           >
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-              <span>{dndStatusText}</span>
-              {isScheduleEnabledButInactive ? (
-                <span
-                  style={{
-                    width: 6,
-                    height: 6,
-                    borderRadius: 999,
-                    background: '#1677ff',
-                    opacity: 0.7
-                  }}
-                />
-              ) : null}
-            </span>
+            {dndEntryText}
           </Button>
         </div>
       </div>
