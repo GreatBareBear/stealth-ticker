@@ -8,5 +8,7 @@ interface Window {
       delete: (key: string) => Promise<void>
     }
     tempUnlock: (unlock: boolean) => void
+    onStockDataUpdated: (callback: (data: Record<string, any>) => void) => void
+    offStockDataUpdated: () => void
   }
 }

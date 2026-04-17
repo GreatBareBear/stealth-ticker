@@ -1,0 +1,7 @@
+- [x] 行情轮询已从渲染进程的 `Monitor.tsx` 移动到主进程的一个独立服务中。
+- [x] 告警判定、静音期（`cooldownSeconds`）、滞后（`hysteresis`）、DND 控制已在主进程可靠执行。
+- [x] 告警弹窗改用了 Electron 原生的 `Notification`，声音和闪烁也完全在主进程中管理。
+- [x] 当渲染进程通过 `store:set` 修改设置时，主进程会实时更新配置缓存，无需重启。
+- [x] 主进程能够定期向渲染进程推送新的行情数据。
+- [x] 渲染进程退化为纯 UI 层，只负责接收 `stock-data-updated` 事件并展示。
+- [x] `npm run typecheck:main` 和 `npm run typecheck:web` 均没有 TypeScript 错误。

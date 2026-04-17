@@ -3,6 +3,7 @@ import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
 import Store from 'electron-store'
+import { AlertService } from './alertService'
 
 const StoreClass = typeof Store === 'function' ? Store : (Store as any).default
 const store = new StoreClass()
@@ -12,6 +13,7 @@ let settingsWindow: BrowserWindow | null = null
 let mainWindow: BrowserWindow | null = null
 let aboutWindow: BrowserWindow | null = null
 let isPanelLocked = store.get('panelLocked') === true
+let alertService: AlertService | null = null
 
 function openAbout(): void {
   if (aboutWindow) {
@@ -135,6 +137,7 @@ function createTray(): void {
   tray = new Tray(icon)
   tray.setToolTip('stealth-ticker')
   tray.setContextMenu(buildTrayMenu())
+  if (alertService) alertService.setTray(tray)
 }
 
 function applySettings(settings: any): void {
@@ -306,6 +309,9 @@ app.whenReady().then(() => {
     if (key === 'settings') {
       applySettings(value)
     }
+    if (alertService) {
+      alertService.reloadConfig()
+    }
   })
 
   ipcMain.handle('store:delete', (_event, key) => {
@@ -421,6 +427,9 @@ app.whenReady().then(() => {
   createWindow()
   registerBossKey(initialSettings)
   setPanelLocked(isPanelLocked)
+
+  alertService = new AlertService(store, mainWindow, tray)
+  alertService.start()
 
   app.on('activate', function () {
     // On macOS it's common to re-create a window in the app when the
