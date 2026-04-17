@@ -1,0 +1,5 @@
+- [x] `alertService.ts` 中的 `pollInterval` 被重构为递归的 `pollTimeout`。
+- [x] 每次请求具备超时（Abort）保护，避免堆积。
+- [x] 连续失败后，轮询时间呈指数增加（上限通常在 30 秒或 60 秒内）。
+- [x] 成功后，轮询时间立刻恢复正常配置。
+- [x] 运行 `npm run typecheck:main` 没有 TypeScript 错误。

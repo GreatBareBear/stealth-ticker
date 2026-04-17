@@ -23,11 +23,12 @@ export class AlertService {
   private store: any
   private mainWindow: BrowserWindow | null
   private tray: Tray | null
-  private pollInterval: NodeJS.Timeout | null = null
+  private pollTimeout: NodeJS.Timeout | null = null
   private blinkInterval: NodeJS.Timeout | null = null
 
   private lastTriggeredAt: Map<string, number> = new Map()
   private triggeredKeys: Set<string> = new Set()
+  private consecutiveFailures: number = 0
 
   constructor(store: any, mainWindow: BrowserWindow | null, tray: Tray | null) {
     this.store = store
@@ -49,20 +50,15 @@ export class AlertService {
   }
 
   public start() {
-    if (this.pollInterval) {
-      clearInterval(this.pollInterval)
-    }
-    const settings = this.store.get('settings') || {}
-    const refreshRate = settings.refreshRate || 3
-    this.pollInterval = setInterval(() => this.poll(), refreshRate * 1000)
-    // Call once immediately
+    this.stop()
+    this.consecutiveFailures = 0
     this.poll()
   }
 
   public stop() {
-    if (this.pollInterval) {
-      clearInterval(this.pollInterval)
-      this.pollInterval = null
+    if (this.pollTimeout) {
+      clearTimeout(this.pollTimeout)
+      this.pollTimeout = null
     }
     if (this.blinkInterval) {
       clearInterval(this.blinkInterval)
@@ -70,22 +66,47 @@ export class AlertService {
     }
   }
 
+  private scheduleNextPoll() {
+    if (this.pollTimeout) {
+      clearTimeout(this.pollTimeout)
+    }
+    
+    const settings = this.store.get('settings') || {}
+    const baseRefreshRate = settings.refreshRate || 3
+    
+    // Exponential backoff: base * (2 ^ consecutiveFailures), max 60 seconds
+    const backoffMultiplier = Math.pow(2, Math.min(this.consecutiveFailures, 6)) // max 2^6 = 64
+    const nextInterval = Math.min(baseRefreshRate * backoffMultiplier, 60)
+    
+    this.pollTimeout = setTimeout(() => this.poll(), nextInterval * 1000)
+  }
+
   private async poll() {
     try {
       const stocks: Stock[] = this.store.get('stocks') || []
       const visibleStocks = stocks.filter((s) => s.visible)
-      if (visibleStocks.length === 0) return
+      if (visibleStocks.length === 0) {
+        this.scheduleNextPoll()
+        return
+      }
 
       const symbols = visibleStocks.map((s) => s.symbol).join(',')
       const url = `https://qt.gtimg.cn/q=${symbols}`
 
       const request = net.request(url)
+      
+      // Setup timeout (e.g., 5 seconds)
+      const reqTimeout = setTimeout(() => {
+        request.abort()
+      }, 5000)
+
       request.on('response', (response) => {
         let data = Buffer.alloc(0)
         response.on('data', (chunk) => {
           data = Buffer.concat([data, chunk])
         })
         response.on('end', () => {
+          clearTimeout(reqTimeout)
           const decoder = new TextDecoder('gbk')
           const text = decoder.decode(data)
           const newData = this.parseResponse(text)
@@ -97,14 +118,25 @@ export class AlertService {
 
           // 2. Check alerts
           this.checkAlerts(newData, stocks)
+          
+          // Reset failures on success
+          this.consecutiveFailures = 0
+          this.scheduleNextPoll()
         })
       })
+      
       request.on('error', (err) => {
+        clearTimeout(reqTimeout)
         console.error('Fetch stock data failed in main process:', err)
+        this.consecutiveFailures++
+        this.scheduleNextPoll()
       })
+      
       request.end()
     } catch (e) {
       console.error('Error in alert poll:', e)
+      this.consecutiveFailures++
+      this.scheduleNextPoll()
     }
   }
 
