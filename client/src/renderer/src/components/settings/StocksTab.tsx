@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react'
-import { Table, Button, Popconfirm, Switch, message, Select, Spin, Modal, Form, Radio, InputNumber, Input, Space, Tooltip, Divider, Tag } from 'antd'
-import { PlusOutlined, DeleteOutlined, DragOutlined, BellOutlined, BellFilled, MinusCircleOutlined, ClockCircleOutlined, SettingOutlined, RightOutlined } from '@ant-design/icons'
+import { Table, Button, Popconfirm, Switch, message, Select, Spin, Modal, Form, Radio, InputNumber, Input, Space, Tooltip, Divider } from 'antd'
+import { PlusOutlined, DeleteOutlined, DragOutlined, BellOutlined, BellFilled, ClockCircleOutlined } from '@ant-design/icons'
 import {
   DndContext,
   PointerSensor,
@@ -589,25 +589,20 @@ export function StocksTab(): React.JSX.Element {
   const isDndActive = isTempPausedActive || isTimeDndActive
   
   let dndStatusText = ''
-  let dndTagColor = 'default'
-  let dndTagIcon = <SettingOutlined />
+  let dndBtnType: 'text' | 'primary' = 'text'
+  let dndBtnDanger = false
 
   if (isDndActive) {
     if (isTempPausedActive) {
-      dndStatusText = `免打扰: 剩余 ${formatRemaining(alertsTempPausedUntil - nowTick)}`
-      dndTagColor = 'warning'
-      dndTagIcon = <ClockCircleOutlined />
+      dndStatusText = `剩余 ${formatRemaining(alertsTempPausedUntil - nowTick)}`
+      dndBtnType = 'primary'
+      dndBtnDanger = true
     } else {
-      dndStatusText = '免打扰: 生效中'
-      dndTagColor = 'processing'
-      dndTagIcon = <ClockCircleOutlined />
+      dndStatusText = '免打扰生效中'
+      dndBtnType = 'primary'
     }
-  } else if (alertsDndEnabled) {
-    dndStatusText = '免打扰: 开启'
-    dndTagColor = 'blue'
-    dndTagIcon = <MinusCircleOutlined />
   } else {
-    dndStatusText = '免打扰: 关闭'
+    dndStatusText = '免打扰'
   }
 
   return (
@@ -627,7 +622,7 @@ export function StocksTab(): React.JSX.Element {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div>
               <div style={{ fontWeight: 600 }}>当前状态</div>
-              <div style={{ color: 'rgba(0,0,0,0.65)' }}>{dndStatusText}</div>
+              <div style={{ color: 'rgba(0,0,0,0.65)' }}>{isDndActive ? dndStatusText : '未开启'}</div>
             </div>
             <Button
               onClick={() => {
@@ -806,17 +801,16 @@ export function StocksTab(): React.JSX.Element {
             />
           </Space>
           <Divider type="vertical" style={{ margin: '0 4px' }} />
-          <Tooltip title="点击设置免打扰">
-            <Tag
-              color={dndTagColor}
-              icon={dndTagIcon}
-              onClick={() => setIsDndModalVisible(true)}
-              style={{ marginInlineEnd: 0, cursor: 'pointer', userSelect: 'none' }}
-            >
-              {dndStatusText}
-              <RightOutlined style={{ fontSize: 10, marginLeft: 4, opacity: 0.6 }} />
-            </Tag>
-          </Tooltip>
+          <Button
+            type={dndBtnType}
+            danger={dndBtnDanger}
+            icon={<ClockCircleOutlined />}
+            size="small"
+            onClick={() => setIsDndModalVisible(true)}
+            style={{ marginInlineEnd: 0, padding: '0 8px' }}
+          >
+            {dndStatusText}
+          </Button>
         </div>
       </div>
 
