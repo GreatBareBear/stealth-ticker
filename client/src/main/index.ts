@@ -32,8 +32,8 @@ function openAbout(): void {
     icon,
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
-      sandbox: false,
-      webSecurity: false
+      contextIsolation: true,
+      nodeIntegration: false
     }
   })
 
@@ -71,8 +71,8 @@ function openSettings(): void {
     icon,
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
-      sandbox: false,
-      webSecurity: false
+      contextIsolation: true,
+      nodeIntegration: false
     }
   })
   settingsWindow.setMenu(null)
@@ -155,8 +155,8 @@ function createWindow(): void {
     icon,
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
-      sandbox: false,
-      webSecurity: false
+      contextIsolation: true,
+      nodeIntegration: false
     }
   })
 
@@ -320,6 +320,19 @@ app.whenReady().then(() => {
           if (tray) tray.setImage(icon)
         }
       }, 500)
+    }
+  })
+
+  // Handle CORS for tencent API
+  const { session } = require('electron')
+  session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
+    const url = details.url
+    if (url.startsWith('https://qt.gtimg.cn') || url.startsWith('https://smartbox.gtimg.cn')) {
+      const responseHeaders = Object.assign({}, details.responseHeaders)
+      responseHeaders['Access-Control-Allow-Origin'] = ['*']
+      callback({ cancel: false, responseHeaders })
+    } else {
+      callback({ cancel: false })
     }
   })
 
