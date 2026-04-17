@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react'
 import {
-  Button,
   Collapse,
   Form,
   Select,
@@ -15,16 +14,76 @@ import {
 
 const { Title, Text } = Typography
 
+type DisplayPreset = 'recommended' | 'stealth' | 'clear' | 'custom'
+
+const PRESET_FIELDS = ['opacity', 'theme', 'fontSize', 'lineHeight', 'refreshRate', 'showChangePercent', 'showHighLow'] as const
+
+const PRESETS: Record<Exclude<DisplayPreset, 'custom'>, Record<string, unknown>> = {
+  recommended: {
+    opacity: 80,
+    theme: true,
+    fontSize: 'medium',
+    lineHeight: 1.5,
+    refreshRate: 3,
+    showChangePercent: true,
+    showHighLow: false
+  },
+  stealth: {
+    opacity: 35,
+    theme: true,
+    fontSize: 'small',
+    lineHeight: 1.4,
+    refreshRate: 5,
+    showChangePercent: true,
+    showHighLow: false
+  },
+  clear: {
+    opacity: 90,
+    theme: true,
+    fontSize: 'large',
+    lineHeight: 1.6,
+    refreshRate: 3,
+    showChangePercent: true,
+    showHighLow: true
+  }
+}
+
+function inferPreset(values: Record<string, any>): DisplayPreset {
+  const pick = (obj: Record<string, any>): Record<string, any> =>
+    Object.fromEntries(PRESET_FIELDS.map((k) => [k, obj[k]]))
+
+  const picked = pick(values)
+
+  const match = (presetKey: Exclude<DisplayPreset, 'custom'>): boolean => {
+    const preset = pick(PRESETS[presetKey] as Record<string, any>)
+    return PRESET_FIELDS.every((k) => preset[k] === picked[k])
+  }
+
+  if (match('recommended')) return 'recommended'
+  if (match('stealth')) return 'stealth'
+  if (match('clear')) return 'clear'
+  return 'custom'
+}
+
 export function DisplayTab(): React.JSX.Element {
   const [form] = Form.useForm()
   const [loading, setLoading] = useState(true)
+  const displayPreset = Form.useWatch('displayPreset', form) as DisplayPreset | undefined
+  const isApplyingPresetRef = React.useRef(false)
 
   useEffect(() => {
     const loadSettings = async () => {
       try {
         const settings = await window.api.store.get('settings')
         if (settings) {
-          form.setFieldsValue(settings)
+          const next = { ...(settings as Record<string, unknown>) }
+          const presetFromStore = (next as any).displayPreset as unknown
+          const inferred = inferPreset(next as any)
+          const normalizedPreset: DisplayPreset =
+            presetFromStore === 'recommended' || presetFromStore === 'stealth' || presetFromStore === 'clear' || presetFromStore === 'custom'
+              ? presetFromStore
+              : inferred
+          form.setFieldsValue({ ...next, displayPreset: normalizedPreset })
         }
       } catch (error) {
         console.error('Failed to load settings:', error)
@@ -38,22 +97,46 @@ export function DisplayTab(): React.JSX.Element {
   const handleValuesChange = async (_changedValues: any, allValues: any) => {
     try {
       const currentSettings = (await window.api.store.get('settings')) || {}
+      const changedKeys = Object.keys(_changedValues || {})
+      const hasPresetRelatedChange = changedKeys.some((k) => (PRESET_FIELDS as readonly string[]).includes(k))
+
+      if (!isApplyingPresetRef.current && hasPresetRelatedChange) {
+        const currentPreset = form.getFieldValue('displayPreset') as DisplayPreset | undefined
+        if (currentPreset && currentPreset !== 'custom') {
+          isApplyingPresetRef.current = true
+          form.setFieldValue('displayPreset', 'custom')
+          const newSettings = { ...currentSettings, ...allValues, displayPreset: 'custom' }
+          await window.api.store.set('settings', newSettings)
+          isApplyingPresetRef.current = false
+          return
+        }
+      }
+
       const newSettings = { ...currentSettings, ...allValues }
       await window.api.store.set('settings', newSettings)
     } catch (error) {
       console.error('Failed to save settings:', error)
+    } finally {
+      if (isApplyingPresetRef.current) {
+        isApplyingPresetRef.current = false
+      }
     }
   }
 
-  const applyPreset = async (preset: Record<string, unknown>): Promise<void> => {
+  const applyPreset = async (presetKey: DisplayPreset): Promise<void> => {
+    if (presetKey === 'custom') return
     try {
       const currentSettings = (await window.api.store.get('settings')) || {}
       const currentFormValues = form.getFieldsValue(true)
-      const newSettings = { ...currentSettings, ...currentFormValues, ...preset }
-      form.setFieldsValue(preset)
+      const preset = PRESETS[presetKey]
+      const newSettings = { ...currentSettings, ...currentFormValues, ...preset, displayPreset: presetKey }
+      isApplyingPresetRef.current = true
+      form.setFieldsValue({ ...preset, displayPreset: presetKey })
       await window.api.store.set('settings', newSettings)
     } catch (error) {
       console.error('Failed to apply preset:', error)
+    } finally {
+      isApplyingPresetRef.current = false
     }
   }
 
@@ -74,6 +157,7 @@ export function DisplayTab(): React.JSX.Element {
         wrapperCol={{ span: 14 }}
         onValuesChange={handleValuesChange}
         initialValues={{
+          displayPreset: 'recommended',
           theme: true,
           colorTheme: 'red-green',
           opacity: 80,
@@ -92,55 +176,27 @@ export function DisplayTab(): React.JSX.Element {
         <Title level={5} style={{ marginBottom: 8 }}>
           预设模板
         </Title>
-        <Space wrap size="small" style={{ marginBottom: 12 }}>
-          <Button
-            size="small"
-            onClick={() =>
-              applyPreset({
-                opacity: 80,
-                theme: true,
-                fontSize: 'medium',
-                lineHeight: 1.5,
-                refreshRate: 3,
-                showChangePercent: true,
-                showHighLow: false
-              })
-            }
-          >
-            默认推荐
-          </Button>
-          <Button
-            size="small"
-            onClick={() =>
-              applyPreset({
-                opacity: 35,
-                theme: true,
-                fontSize: 'small',
-                lineHeight: 1.4,
-                refreshRate: 5,
-                showChangePercent: true,
-                showHighLow: false
-              })
-            }
-          >
-            上班隐蔽
-          </Button>
-          <Button
-            size="small"
-            onClick={() =>
-              applyPreset({
-                opacity: 90,
-                theme: true,
-                fontSize: 'large',
-                lineHeight: 1.6,
-                refreshRate: 3,
-                showChangePercent: true,
-                showHighLow: true
-              })
-            }
-          >
-            更清晰
-          </Button>
+        <Space direction="vertical" size={4} style={{ width: '100%', marginBottom: 12 }}>
+          <Form.Item name="displayPreset" style={{ marginBottom: 0 }}>
+            <Segmented
+              options={[
+                { label: '推荐', value: 'recommended' },
+                { label: '隐蔽', value: 'stealth' },
+                { label: '清晰', value: 'clear' },
+                { label: '自定义', value: 'custom' }
+              ]}
+              onChange={(value) => applyPreset(value as DisplayPreset)}
+            />
+          </Form.Item>
+          <Text type="secondary">
+            {displayPreset === 'stealth'
+              ? '透明度 35 · 字号 小 · 刷新 5s · 高低价 关'
+              : displayPreset === 'clear'
+                ? '透明度 90 · 字号 大 · 刷新 3s · 高低价 开'
+                : displayPreset === 'recommended'
+                  ? '透明度 80 · 字号 中 · 刷新 3s · 高低价 关'
+                  : '已自定义'}
+          </Text>
         </Space>
 
         <Collapse
