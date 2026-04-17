@@ -1,0 +1,5 @@
+- [x] `index.html` 中的 CSP meta 标签已经收紧。
+- [x] `connect-src` 移除了通配符 `*`，添加了 `https://qt.gtimg.cn` 和 `https://smartbox.gtimg.cn`。
+- [x] `script-src` 移除了 `'unsafe-inline'`。
+- [x] Ant Design 相关的内联样式依然能够正常工作（`style-src 'unsafe-inline'`）。
+- [x] 运行 `npm run typecheck:web` 没有 TypeScript 错误。
