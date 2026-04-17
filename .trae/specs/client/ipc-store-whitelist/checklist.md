@@ -1,0 +1,6 @@
+- [x] 主进程中的 `store:get` 已增加白名单判断。
+- [x] 主进程中的 `store:set` 已增加白名单和 Value 体积限制（例如 < 5MB）。
+- [x] 主进程中的 `store:delete` 已增加白名单判断。
+- [x] 只有允许的 key（如 `settings`, `stocks`, `alerts` 等）才能被正常读取/写入/删除。
+- [x] 非法写入或超大写入会被主进程拦截（抛错）。
+- [x] 运行 `npm run typecheck:main` 没有 TypeScript 错误。

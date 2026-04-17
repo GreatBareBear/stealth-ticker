@@ -226,12 +226,48 @@ app.whenReady().then(() => {
   // IPC test
   ipcMain.on('ping', () => console.log('pong'))
 
+  const ALLOWED_STORE_KEYS = [
+    'settings',
+    'stocks',
+    'alerts',
+    'alertsGlobalPaused',
+    'alertsTempPausedUntil',
+    'alertsDndEnabled',
+    'alertsDndStart',
+    'alertsDndEnd',
+    'alertsDndAllowedMethods',
+    'chartSettings',
+    'otherSettings',
+    'dashboard'
+  ]
+
+  function isValidKey(key: string): boolean {
+    return ALLOWED_STORE_KEYS.includes(key)
+  }
+
+  function isValidValue(value: any): boolean {
+    try {
+      const serialized = JSON.stringify(value)
+      // Max 5MB length (approx 5 * 1024 * 1024 characters)
+      return serialized !== undefined && serialized.length <= 5 * 1024 * 1024
+    } catch {
+      return false
+    }
+  }
+
   // electron-store IPC handlers
   ipcMain.handle('store:get', (_event, key) => {
+    if (!isValidKey(key)) return null
     return store.get(key)
   })
 
   ipcMain.handle('store:set', (_event, key, value) => {
+    if (!isValidKey(key)) {
+      throw new Error(`Store key "${key}" is not allowed.`)
+    }
+    if (!isValidValue(value)) {
+      throw new Error(`Store value for key "${key}" is invalid or too large.`)
+    }
     store.set(key, value)
     if (key === 'settings') {
       registerBossKey(value)
@@ -242,6 +278,7 @@ app.whenReady().then(() => {
   })
 
   ipcMain.handle('store:delete', (_event, key) => {
+    if (!isValidKey(key)) return
     store.delete(key)
   })
 
