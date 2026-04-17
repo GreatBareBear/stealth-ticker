@@ -1,0 +1,5 @@
+- [x] 当老板键触发隐藏时，除 `mainWindow.hide()` 外，主动设置了 `mainWindow.setSkipTaskbar(true)` 增强隐蔽。
+- [x] 当老板键触发隐藏时，如果在 macOS 上，则调用了 `app.dock?.hide()` 隐藏 Dock。
+- [x] 当老板键触发恢复时，根据 `settings.ghostMode` 恢复了 `mainWindow.setSkipTaskbar(...)`。
+- [x] 当老板键触发恢复时，如果在 macOS 上且不在幽灵模式，则恢复了 `app.dock?.show()`。
+- [x] 运行 `npm run typecheck:main` 没有 TypeScript 错误。

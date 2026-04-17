@@ -217,9 +217,19 @@ function registerBossKey(settings: any) {
           if (mainWindow) {
             if (mainWindow.isVisible()) {
               mainWindow.hide()
+              mainWindow.setSkipTaskbar(true)
+              if (process.platform === 'darwin' && app.dock) {
+                app.dock.hide()
+              }
               mainWindow.webContents.send('window-hidden')
             } else {
               mainWindow.show()
+              mainWindow.setSkipTaskbar(settings.ghostMode !== false)
+              if (process.platform === 'darwin' && app.dock) {
+                if (settings.ghostMode === false) {
+                  app.dock.show()
+                }
+              }
               mainWindow.webContents.send('window-shown')
             }
           }
