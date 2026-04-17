@@ -136,6 +136,28 @@ function createTray(): void {
   tray.setContextMenu(buildTrayMenu())
 }
 
+function applySettings(settings: any): void {
+  if (!settings) return
+
+  if (mainWindow) {
+    mainWindow.setAlwaysOnTop(settings.alwaysOnTop !== false)
+    mainWindow.setSkipTaskbar(settings.ghostMode !== false)
+  }
+
+  if (settings.showTrayIcon !== false) {
+    if (!tray) {
+      createTray()
+    }
+  } else {
+    if (tray) {
+      tray.destroy()
+      tray = null
+    }
+  }
+
+  registerBossKey(settings)
+}
+
 function createWindow(): void {
   const settings: any = store.get('settings') || {}
 
@@ -148,7 +170,7 @@ function createWindow(): void {
     title: 'stealth-ticker',
     frame: false,
     transparent: true,
-    alwaysOnTop: true,
+    alwaysOnTop: settings.alwaysOnTop !== false,
     hasShadow: false,
     autoHideMenuBar: true,
     skipTaskbar: settings.ghostMode !== false,
@@ -270,10 +292,7 @@ app.whenReady().then(() => {
     }
     store.set(key, value)
     if (key === 'settings') {
-      registerBossKey(value)
-      if (mainWindow) {
-        mainWindow.setSkipTaskbar(value.ghostMode !== false)
-      }
+      applySettings(value)
     }
   })
 
@@ -283,6 +302,9 @@ app.whenReady().then(() => {
   })
 
   ipcMain.on('show-context-menu', (event) => {
+    const settings: any = store.get('settings') || {}
+    if (settings.enableContextMenu === false) return
+
     const template: (Electron.MenuItemConstructorOptions | Electron.MenuItem)[] = [
       {
         label: '锁定面板',
@@ -373,10 +395,12 @@ app.whenReady().then(() => {
     }
   })
 
-  createTray()
+  const initialSettings = store.get('settings') || {}
+  if ((initialSettings as any).showTrayIcon !== false) {
+    createTray()
+  }
   createWindow()
-
-  registerBossKey(store.get('settings'))
+  registerBossKey(initialSettings)
 
   app.on('activate', function () {
     // On macOS it's common to re-create a window in the app when the
