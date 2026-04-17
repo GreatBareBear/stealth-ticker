@@ -3,7 +3,6 @@ import { Tabs } from 'antd'
 import { ChartTab } from './ChartTab'
 import { DashboardTab } from './DashboardTab'
 import { MembershipTab } from './MembershipTab'
-import { OtherTab } from './OtherTab'
 
 export function DataTab(): React.JSX.Element {
   const items = [
@@ -21,11 +20,6 @@ export function DataTab(): React.JSX.Element {
       key: 'membership',
       label: '会员',
       children: <MembershipTab />
-    },
-    {
-      key: 'other',
-      label: '其它',
-      children: <OtherTab />
     }
   ]
 

@@ -6,7 +6,6 @@ import { AdvancedTab } from '../components/settings/AdvancedTab'
 import { ChartTab } from '../components/settings/ChartTab'
 import { DashboardTab } from '../components/settings/DashboardTab'
 import { MembershipTab } from '../components/settings/MembershipTab'
-import { OtherTab } from '../components/settings/OtherTab'
 
 function Settings(): React.JSX.Element {
   const items = [
@@ -39,11 +38,6 @@ function Settings(): React.JSX.Element {
       key: '6',
       label: '会员',
       children: <MembershipTab />
-    },
-    {
-      key: '7',
-      label: '其它',
-      children: <OtherTab />
     }
   ]
 
