@@ -743,10 +743,12 @@ export function StocksTab(): React.JSX.Element {
           display: 'flex',
           gap: 8,
           justifyContent: 'space-between',
-          alignItems: 'center'
+          alignItems: 'center',
+          position: 'relative',
+          zIndex: 10
         }}
       >
-        <div style={{ display: 'flex', gap: 8, zIndex: 10, position: 'relative' }}>
+        <div style={{ display: 'flex', gap: 8, position: 'relative' }}>
           <Select
             showSearch
             value={selectedStock ? selectedStock.symbol : null}
