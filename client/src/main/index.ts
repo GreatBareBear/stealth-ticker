@@ -3,6 +3,7 @@ import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
 import Store from 'electron-store'
+import { AlertService } from './alertService'
 
 const StoreClass = typeof Store === 'function' ? Store : (Store as any).default
 const store = new StoreClass()
@@ -11,7 +12,8 @@ let tray: Tray | null = null
 let settingsWindow: BrowserWindow | null = null
 let mainWindow: BrowserWindow | null = null
 let aboutWindow: BrowserWindow | null = null
-let isPanelLocked = false
+let isPanelLocked = store.get('panelLocked') === true
+let alertService: AlertService | null = null
 
 function openAbout(): void {
   if (aboutWindow) {
@@ -32,8 +34,8 @@ function openAbout(): void {
     icon,
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
-      sandbox: false,
-      webSecurity: false
+      contextIsolation: true,
+      nodeIntegration: false
     }
   })
 
@@ -71,8 +73,8 @@ function openSettings(): void {
     icon,
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
-      sandbox: false,
-      webSecurity: false
+      contextIsolation: true,
+      nodeIntegration: false
     }
   })
   settingsWindow.setMenu(null)
@@ -95,6 +97,7 @@ function openSettings(): void {
 
 function setPanelLocked(locked: boolean): void {
   isPanelLocked = locked
+  store.set('panelLocked', locked)
   if (mainWindow) {
     mainWindow.setIgnoreMouseEvents(locked, { forward: true })
     mainWindow.webContents.send('window-locked', locked)
@@ -134,6 +137,29 @@ function createTray(): void {
   tray = new Tray(icon)
   tray.setToolTip('stealth-ticker')
   tray.setContextMenu(buildTrayMenu())
+  if (alertService) alertService.setTray(tray)
+}
+
+function applySettings(settings: any): void {
+  if (!settings) return
+
+  if (mainWindow) {
+    mainWindow.setAlwaysOnTop(settings.alwaysOnTop !== false)
+    mainWindow.setSkipTaskbar(settings.ghostMode !== false)
+  }
+
+  if (settings.showTrayIcon !== false) {
+    if (!tray) {
+      createTray()
+    }
+  } else {
+    if (tray) {
+      tray.destroy()
+      tray = null
+    }
+  }
+
+  registerBossKey(settings)
 }
 
 function createWindow(): void {
@@ -148,15 +174,15 @@ function createWindow(): void {
     title: 'stealth-ticker',
     frame: false,
     transparent: true,
-    alwaysOnTop: true,
+    alwaysOnTop: settings.alwaysOnTop !== false,
     hasShadow: false,
     autoHideMenuBar: true,
     skipTaskbar: settings.ghostMode !== false,
     icon,
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
-      sandbox: false,
-      webSecurity: false
+      contextIsolation: true,
+      nodeIntegration: false
     }
   })
 
@@ -194,9 +220,19 @@ function registerBossKey(settings: any) {
           if (mainWindow) {
             if (mainWindow.isVisible()) {
               mainWindow.hide()
+              mainWindow.setSkipTaskbar(true)
+              if (process.platform === 'darwin' && app.dock) {
+                app.dock.hide()
+              }
               mainWindow.webContents.send('window-hidden')
             } else {
               mainWindow.show()
+              mainWindow.setSkipTaskbar(settings.ghostMode !== false)
+              if (process.platform === 'darwin' && app.dock) {
+                if (settings.ghostMode === false) {
+                  app.dock.show()
+                }
+              }
               mainWindow.webContents.send('window-shown')
             }
           }
@@ -226,26 +262,67 @@ app.whenReady().then(() => {
   // IPC test
   ipcMain.on('ping', () => console.log('pong'))
 
+  const ALLOWED_STORE_KEYS = [
+    'settings',
+    'stocks',
+    'alerts',
+    'alertsGlobalPaused',
+    'alertsTempPausedUntil',
+    'alertsDndEnabled',
+    'alertsDndStart',
+    'alertsDndEnd',
+    'alertsDndAllowedMethods',
+    'chartSettings',
+    'otherSettings',
+    'dashboard',
+    'panelLocked'
+  ]
+
+  function isValidKey(key: string): boolean {
+    return ALLOWED_STORE_KEYS.includes(key)
+  }
+
+  function isValidValue(value: any): boolean {
+    try {
+      const serialized = JSON.stringify(value)
+      // Max 5MB length (approx 5 * 1024 * 1024 characters)
+      return serialized !== undefined && serialized.length <= 5 * 1024 * 1024
+    } catch {
+      return false
+    }
+  }
+
   // electron-store IPC handlers
   ipcMain.handle('store:get', (_event, key) => {
+    if (!isValidKey(key)) return null
     return store.get(key)
   })
 
   ipcMain.handle('store:set', (_event, key, value) => {
+    if (!isValidKey(key)) {
+      throw new Error(`Store key "${key}" is not allowed.`)
+    }
+    if (!isValidValue(value)) {
+      throw new Error(`Store value for key "${key}" is invalid or too large.`)
+    }
     store.set(key, value)
     if (key === 'settings') {
-      registerBossKey(value)
-      if (mainWindow) {
-        mainWindow.setSkipTaskbar(value.ghostMode !== false)
-      }
+      applySettings(value)
+    }
+    if (alertService) {
+      alertService.reloadConfig()
     }
   })
 
   ipcMain.handle('store:delete', (_event, key) => {
+    if (!isValidKey(key)) return
     store.delete(key)
   })
 
   ipcMain.on('show-context-menu', (event) => {
+    const settings: any = store.get('settings') || {}
+    if (settings.enableContextMenu === false) return
+
     const template: (Electron.MenuItemConstructorOptions | Electron.MenuItem)[] = [
       {
         label: '锁定面板',
@@ -289,6 +366,13 @@ app.whenReady().then(() => {
     }
   })
 
+  ipcMain.on('temp-unlock', (_event, unlock: boolean) => {
+    if (!isPanelLocked) return
+    if (mainWindow) {
+      mainWindow.setIgnoreMouseEvents(!unlock, { forward: true })
+    }
+  })
+
   let blinkInterval: NodeJS.Timeout | null = null
 
   ipcMain.on('trigger-alert', (_event, { method, message: _message }: { method: string; message?: string }) => {
@@ -323,10 +407,29 @@ app.whenReady().then(() => {
     }
   })
 
-  createTray()
-  createWindow()
+  // Handle CORS for tencent API
+  const { session } = require('electron')
+  session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
+    const url = details.url
+    if (url.startsWith('https://qt.gtimg.cn') || url.startsWith('https://smartbox.gtimg.cn')) {
+      const responseHeaders = Object.assign({}, details.responseHeaders)
+      responseHeaders['Access-Control-Allow-Origin'] = ['*']
+      callback({ cancel: false, responseHeaders })
+    } else {
+      callback({ cancel: false })
+    }
+  })
 
-  registerBossKey(store.get('settings'))
+  const initialSettings = store.get('settings') || {}
+  if ((initialSettings as any).showTrayIcon !== false) {
+    createTray()
+  }
+  createWindow()
+  registerBossKey(initialSettings)
+  setPanelLocked(isPanelLocked)
+
+  alertService = new AlertService(store, mainWindow, tray)
+  alertService.start()
 
   app.on('activate', function () {
     // On macOS it's common to re-create a window in the app when the

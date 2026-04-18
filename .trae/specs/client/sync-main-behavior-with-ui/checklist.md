@@ -1,0 +1,7 @@
+- [x] 主进程通过 `applySettings` 函数集中处理设置项应用。
+- [x] 修改 `alwaysOnTop` 设置能实时生效（不再硬编码 `true`）。
+- [x] 修改 `ghostMode` 设置能实时生效。
+- [x] 修改 `showTrayIcon` 设置能实时显示/隐藏托盘图标。
+- [x] 修改 `enableContextMenu` 设置能实时开启/关闭右键菜单弹出。
+- [x] `store:set('settings')` 被拦截并更新主进程行为。
+- [x] `npm run typecheck:node` 没有 TypeScript 错误。

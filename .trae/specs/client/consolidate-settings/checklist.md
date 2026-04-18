@@ -1,0 +1,6 @@
+- [x] `AdvancedTab.tsx` 现在包含了“数据与隐私”面板。
+- [x] “一键清理数据”按钮可以在“高级”选项卡中找到并正常工作。
+- [x] “自动搜索模式”开关已被整合到“高级”选项卡中，并能正确保存为 `settings.searchMode`。
+- [x] `OtherTab.tsx` 文件已删除。
+- [x] `Settings.tsx` 中没有不再需要的“其它”标签页。
+- [x] 运行 `npm run typecheck:web` 没有 TypeScript 错误。

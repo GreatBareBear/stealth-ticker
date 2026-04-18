@@ -1,0 +1,6 @@
+- [x] 主窗口（MainWindow）的安全边界已开启（无 `webSecurity: false` 和 `sandbox: false`）。
+- [x] 设置窗口（SettingsWindow）的安全边界已开启。
+- [x] 关于窗口（AboutWindow）的安全边界已开启。
+- [x] 显式声明了 `contextIsolation: true` 和 `nodeIntegration: false`。
+- [x] 主进程通过 `session.defaultSession.webRequest.onHeadersReceived` 正确处理了腾讯行情 API 的跨域响应头。
+- [x] 运行 `npm run typecheck:main` 没有 TypeScript 错误。

@@ -7,6 +7,13 @@ const api = {
     get: (key: string) => ipcRenderer.invoke('store:get', key),
     set: (key: string, value: any) => ipcRenderer.invoke('store:set', key, value),
     delete: (key: string) => ipcRenderer.invoke('store:delete', key)
+  },
+  tempUnlock: (unlock: boolean) => ipcRenderer.send('temp-unlock', unlock),
+  onStockDataUpdated: (callback: (data: Record<string, any>) => void) => {
+    ipcRenderer.on('stock-data-updated', (_event, data) => callback(data))
+  },
+  offStockDataUpdated: () => {
+    ipcRenderer.removeAllListeners('stock-data-updated')
   }
 }
 

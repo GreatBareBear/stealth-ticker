@@ -36,17 +36,6 @@ interface StockData {
   low: string
 }
 
-interface AlertConfig {
-  type: 'price' | 'percent'
-  condition: 'above' | 'below'
-  threshold: number
-  message: string
-  method: 'popup' | 'sound' | 'blink'
-  enabled?: boolean
-  cooldownSeconds?: number
-  hysteresis?: number
-}
-
 const DEFAULT_SETTINGS: Settings = {
   theme: true,
   colorTheme: 'red-green',
@@ -78,12 +67,7 @@ function Monitor(): React.JSX.Element {
   const containerRef = useRef<HTMLDivElement>(null)
   const [isDragging, setIsDragging] = useState(false)
   const [isLocked, setIsLocked] = useState(false)
-  const [isWindowHidden, setIsWindowHidden] = useState(false)
   const dragPosRef = useRef({ x: 0, y: 0 })
-  const triggeredKeys = useRef<Set<string>>(new Set())
-  const lastTriggeredAtRef = useRef<Map<string, number>>(new Map())
-  const lastGlobalPausedRef = useRef<boolean>(false)
-  const lastEnabledMapRef = useRef<Record<string, boolean>>({})
 
   useEffect(() => {
     const handleLock = (_event: any, locked: boolean) => {
@@ -147,6 +131,48 @@ function Monitor(): React.JSX.Element {
     }
   }, [])
 
+  React.useEffect(() => {
+    let isHovering = false
+    let isTempUnlocked = false
+
+    const checkUnlock = (shouldUnlock: boolean) => {
+      const active = isHovering && shouldUnlock
+      if (active !== isTempUnlocked) {
+        isTempUnlocked = active
+        window.api.tempUnlock(active)
+      }
+    }
+
+    const handleMouseMove = (e: MouseEvent) => {
+      isHovering = true
+      checkUnlock(e.altKey)
+    }
+
+    const handleMouseLeave = () => {
+      isHovering = false
+      checkUnlock(false)
+    }
+
+    const handleKeyUp = (e: KeyboardEvent) => {
+      if (e.key === 'Alt') {
+        checkUnlock(false)
+      }
+    }
+
+    document.addEventListener('mousemove', handleMouseMove)
+    document.addEventListener('mouseleave', handleMouseLeave)
+    document.addEventListener('keyup', handleKeyUp)
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove)
+      document.removeEventListener('mouseleave', handleMouseLeave)
+      document.removeEventListener('keyup', handleKeyUp)
+      if (isTempUnlocked) {
+        window.api.tempUnlock(false)
+      }
+    }
+  }, [])
+
   const handleContextMenu = (e: React.MouseEvent): void => {
     e.preventDefault()
     if (isLocked) return
@@ -164,214 +190,38 @@ function Monitor(): React.JSX.Element {
       const currentStocks =
         Array.isArray(storeStocks) && storeStocks.length > 0 ? storeStocks : DEFAULT_STOCKS
       setStocks(currentStocks)
-
-      const visibleStocks = currentStocks.filter((s: Stock) => s.visible)
-      if (visibleStocks.length === 0) return
-
-      const symbols = visibleStocks.map((s: Stock) => s.symbol).join(',')
-      const url = `https://qt.gtimg.cn/q=${symbols}`
-      const response = await fetch(url)
-      const buffer = await response.arrayBuffer()
-      const decoder = new TextDecoder('gbk')
-      const text = decoder.decode(buffer)
-
-      const lines = text.split('\n')
-      const newData: Record<string, StockData> = {}
-
-      lines.forEach((line) => {
-        line = line.trim()
-        if (!line) return
-        const match = line.match(/^v_(.*?)="(.*)";$/)
-        if (match) {
-          const fullSymbol = match[1]
-          const parts = match[2].split('~')
-          if (parts.length > 34) {
-            newData[fullSymbol] = {
-              symbol: fullSymbol,
-              name: parts[1],
-              price: parts[3],
-              changeAmt: parts[31],
-              changePct: parts[32],
-              high: parts[33],
-              low: parts[34]
-            }
-          }
-        }
-      })
-
-      setStockData(newData)
-
-      const alertsGlobalPaused = await window.api.store.get('alertsGlobalPaused')
-      const isGlobalPaused = alertsGlobalPaused === true
-      if (lastGlobalPausedRef.current && !isGlobalPaused) {
-        triggeredKeys.current.clear()
-      }
-      lastGlobalPausedRef.current = isGlobalPaused
-
-      const clearTriggeredKeysForSymbol = (symbol: string) => {
-        for (const k of triggeredKeys.current) {
-          if (k.startsWith(`${symbol}-`)) {
-            triggeredKeys.current.delete(k)
-          }
-        }
-      }
-      const clearLastTriggeredAtForSymbol = (symbol: string) => {
-        for (const k of lastTriggeredAtRef.current.keys()) {
-          if (k.startsWith(`${symbol}-`)) {
-            lastTriggeredAtRef.current.delete(k)
-          }
-        }
-      }
-
-      if (isGlobalPaused) return
-
-      const parseTimeToMinutes = (value: unknown): number | null => {
-        if (typeof value !== 'string') return null
-        const m = value.match(/^(\d{1,2}):(\d{2})$/)
-        if (!m) return null
-        const hh = Number(m[1])
-        const mm = Number(m[2])
-        if (!Number.isFinite(hh) || !Number.isFinite(mm)) return null
-        if (hh < 0 || hh > 23 || mm < 0 || mm > 59) return null
-        return hh * 60 + mm
-      }
-
-      const nowMs = Date.now()
-      const alertsTempPausedUntilRaw = await window.api.store.get('alertsTempPausedUntil')
-      const alertsTempPausedUntil =
-        typeof alertsTempPausedUntilRaw === 'number' ? alertsTempPausedUntilRaw : Number(alertsTempPausedUntilRaw)
-      const tempPausedActive = Number.isFinite(alertsTempPausedUntil) && alertsTempPausedUntil > nowMs
-
-      const alertsDndEnabled = (await window.api.store.get('alertsDndEnabled')) === true
-      const alertsDndStart = await window.api.store.get('alertsDndStart')
-      const alertsDndEnd = await window.api.store.get('alertsDndEnd')
-      const alertsDndAllowedMethodsRaw = await window.api.store.get('alertsDndAllowedMethods')
-      const alertsDndAllowedMethods = Array.isArray(alertsDndAllowedMethodsRaw)
-        ? (alertsDndAllowedMethodsRaw.filter((x) => typeof x === 'string') as string[])
-        : []
-
-      const startMin = parseTimeToMinutes(alertsDndStart)
-      const endMin = parseTimeToMinutes(alertsDndEnd)
-      const nowDate = new Date(nowMs)
-      const nowMin = nowDate.getHours() * 60 + nowDate.getMinutes()
-      const rangeActive =
-        alertsDndEnabled &&
-        startMin !== null &&
-        endMin !== null &&
-        (startMin === endMin
-          ? true
-          : startMin < endMin
-            ? nowMin >= startMin && nowMin < endMin
-            : nowMin >= startMin || nowMin < endMin)
-
-      const isDndActive = tempPausedActive || rangeActive
-
-      const alerts = await window.api.store.get('alerts')
-      if (alerts) {
-        visibleStocks.forEach((stock: Stock) => {
-          const data = newData[stock.symbol]
-          const alert = alerts[stock.symbol] as AlertConfig
-          if (data && alert) {
-            const enabled = alert.enabled !== false
-            const lastEnabled = lastEnabledMapRef.current[stock.symbol]
-            if (lastEnabled === false && enabled) {
-              clearTriggeredKeysForSymbol(stock.symbol)
-              clearLastTriggeredAtForSymbol(stock.symbol)
-            }
-            lastEnabledMapRef.current[stock.symbol] = enabled
-            if (!enabled) {
-              clearTriggeredKeysForSymbol(stock.symbol)
-              return
-            }
-
-            const value = alert.type === 'price' ? parseFloat(data.price) : parseFloat(data.changePct)
-            if (isNaN(value)) return
-
-            let isTriggered = false
-            if (alert.condition === 'above' && value > alert.threshold) {
-              isTriggered = true
-            } else if (alert.condition === 'below' && value < alert.threshold) {
-              isTriggered = true
-            }
-
-            const key = `${stock.symbol}-${alert.type}-${alert.condition}-${alert.threshold}`
-            const cooldownSeconds = typeof alert.cooldownSeconds === 'number' ? Math.max(0, alert.cooldownSeconds) : 60
-            const hysteresis = typeof alert.hysteresis === 'number' ? Math.max(0, alert.hysteresis) : 0
-            const resetTriggered =
-              alert.condition === 'above'
-                ? value < alert.threshold - hysteresis
-                : value > alert.threshold + hysteresis
-
-            if (isTriggered) {
-              if (!triggeredKeys.current.has(key)) {
-                triggeredKeys.current.add(key)
-
-                const lastTriggeredAt = lastTriggeredAtRef.current.get(key) || 0
-                if (cooldownSeconds === 0 || nowMs - lastTriggeredAt >= cooldownSeconds * 1000) {
-                  lastTriggeredAtRef.current.set(key, nowMs)
-
-                  const suppressByDnd =
-                    isDndActive &&
-                    (alertsDndAllowedMethods.length === 0 || !alertsDndAllowedMethods.includes(alert.method))
-
-                  if (!suppressByDnd) {
-                    let message = alert.message || `${stock.name}当前${alert.type === 'price' ? '价格' : '涨跌幅'}${alert.type === 'price' ? data.price : data.changePct}已突破${alert.threshold}`
-                    message = message.replace(/\$\{股票名称\}/g, stock.name)
-                      .replace(/\$\{价格\}/g, data.price)
-                      .replace(/\$\{阈值\}/g, String(alert.threshold))
-
-                    if (alert.method === 'popup') {
-                      const notification = new Notification('股票预警', { body: message })
-                      setTimeout(() => notification.close(), 3000)
-                    } else if (alert.method === 'sound' || alert.method === 'blink') {
-                      window.electron.ipcRenderer.send('trigger-alert', { method: alert.method, message })
-                    }
-                  }
-                }
-              }
-            } else if (resetTriggered) {
-              if (triggeredKeys.current.has(key)) {
-                triggeredKeys.current.delete(key)
-              }
-            }
-          }
-        })
-      }
     } catch (error) {
-      console.error('Failed to fetch stock data', error)
+      console.error('Failed to load initial config', error)
     }
   }, [])
 
   useEffect(() => {
-    // eslint-disable-next-line
+    // Load config on mount
     loadConfigAndData()
-  }, [])
 
-  useEffect(() => {
-    const handleHidden = () => setIsWindowHidden(true)
-    const handleShown = () => {
-      setIsWindowHidden(false)
-      loadConfigAndData()
+    // Listen for stock data pushed from main process
+    const handleStockData = (newData: Record<string, StockData>) => {
+      setStockData(newData)
     }
-
-    window.electron.ipcRenderer.on('window-hidden', handleHidden)
-    window.electron.ipcRenderer.on('window-shown', handleShown)
+    
+    window.api.onStockDataUpdated(handleStockData)
 
     return () => {
-      window.electron.ipcRenderer.removeListener('window-hidden', handleHidden)
-      window.electron.ipcRenderer.removeListener('window-shown', handleShown)
+      window.api.offStockDataUpdated()
     }
   }, [loadConfigAndData])
 
   useEffect(() => {
-    if (isWindowHidden) return
-
-    const rate = settings.refreshRate || 3
-    const interval = setInterval(() => {
+    const handleShown = () => {
       loadConfigAndData()
-    }, rate * 1000)
-    return () => clearInterval(interval)
-  }, [settings.refreshRate, isWindowHidden, loadConfigAndData])
+    }
+
+    window.electron.ipcRenderer.on('window-shown', handleShown)
+
+    return () => {
+      window.electron.ipcRenderer.removeListener('window-shown', handleShown)
+    }
+  }, [loadConfigAndData])
 
   const getFontSize = (): string => {
     switch (settings.fontSize) {

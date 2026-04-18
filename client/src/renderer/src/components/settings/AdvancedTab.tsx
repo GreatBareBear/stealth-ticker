@@ -12,7 +12,8 @@ import {
   message,
   Spin,
   Segmented,
-  Divider
+  Divider,
+  Popconfirm
 } from 'antd'
 
 const { Text } = Typography
@@ -74,7 +75,8 @@ export function AdvancedTab(): React.JSX.Element {
         alwaysOnTop: true,
         showTrayIcon: true,
         enableContextMenu: true,
-        ghostMode: true
+        ghostMode: true,
+        searchMode: '本地加密'
       }
       form.setFieldsValue(defaultSettings)
       const currentSettings = (await window.api.store.get('settings')) || {}
@@ -83,6 +85,23 @@ export function AdvancedTab(): React.JSX.Element {
     } catch (error) {
       console.error('Failed to reset settings:', error)
       message.error('重置失败')
+    }
+  }
+
+  const handleClearData = async (): Promise<void> => {
+    try {
+      await window.api.store.delete('stocks')
+      await window.api.store.delete('alerts')
+      await window.api.store.delete('alertsGlobalPaused')
+      await window.api.store.delete('alertsTempPausedUntil')
+      await window.api.store.delete('alertsDndEnabled')
+      await window.api.store.delete('alertsDndStart')
+      await window.api.store.delete('alertsDndEnd')
+      await window.api.store.delete('alertsDndAllowedMethods')
+      message.success('清理完成')
+    } catch (error) {
+      console.error('Failed to clear data:', error)
+      message.error('清理失败')
     }
   }
 
@@ -156,6 +175,37 @@ export function AdvancedTab(): React.JSX.Element {
                         { label: '关闭', value: false }
                       ]}
                     />
+                  </Form.Item>
+                </>
+              )
+            },
+            {
+              key: 'privacy',
+              label: '数据与隐私',
+              children: (
+                <>
+                  <Form.Item
+                    label="自动搜索模式"
+                    name="searchMode"
+                    extra="选择本地加密可以提高搜索速度和隐私保护。"
+                  >
+                    <Segmented options={['本地加密', '远程加密']} />
+                  </Form.Item>
+                  <Form.Item
+                    label="一键清理数据"
+                    extra="将清除自选股、提醒、免打扰等设置，且无法恢复。"
+                    style={{ marginBottom: 0 }}
+                  >
+                    <Popconfirm
+                      title="确认清理数据？将清除自选股、提醒、免打扰等设置，且无法恢复。"
+                      okText="确认清理"
+                      cancelText="取消"
+                      onConfirm={handleClearData}
+                    >
+                      <Button danger type="primary">
+                        一键清理数据
+                      </Button>
+                    </Popconfirm>
                   </Form.Item>
                 </>
               )
