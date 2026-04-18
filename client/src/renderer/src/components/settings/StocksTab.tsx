@@ -775,28 +775,30 @@ export function StocksTab(): React.JSX.Element {
           </Button>
         </div>
       </div>
-      <DndContext
-        sensors={sensors}
-        modifiers={[restrictToVerticalAxis]}
-        onDragEnd={onDragEnd}
-        collisionDetection={closestCenter}
-      >
-        <SortableContext items={stocks.map((i) => i.key)} strategy={verticalListSortingStrategy}>
-          <Table
-            components={{
-              body: {
-                row: Row
-              }
-            }}
-            dataSource={stocks}
-            columns={columns}
-            pagination={false}
-            size="small"
-            rowKey="key"
-            scroll={{ y: 340 }}
-          />
-        </SortableContext>
-      </DndContext>
+      <div style={{ position: 'relative', zIndex: 1 }}>
+        <DndContext
+          sensors={sensors}
+          modifiers={[restrictToVerticalAxis]}
+          onDragEnd={onDragEnd}
+          collisionDetection={closestCenter}
+        >
+          <SortableContext items={stocks.map((i) => i.key)} strategy={verticalListSortingStrategy}>
+            <Table
+              components={{
+                body: {
+                  row: Row
+                }
+              }}
+              dataSource={stocks}
+              columns={columns}
+              pagination={false}
+              size="small"
+              rowKey="key"
+              scroll={{ y: 340 }}
+            />
+          </SortableContext>
+        </DndContext>
+      </div>
 
       <div style={{ padding: '12px 0 0 0' }}>
         <Divider style={{ margin: 0 }} />
