@@ -746,7 +746,7 @@ export function StocksTab(): React.JSX.Element {
           alignItems: 'center'
         }}
       >
-        <div style={{ display: 'flex', gap: 8 }}>
+        <div style={{ display: 'flex', gap: 8, zIndex: 10, position: 'relative' }}>
           <Select
             showSearch
             value={selectedStock ? selectedStock.symbol : null}
@@ -759,6 +759,9 @@ export function StocksTab(): React.JSX.Element {
             onChange={handleSelect}
             notFoundContent={searchLoading ? <Spin size="small" /> : null}
             options={options}
+            popupMatchSelectWidth={false}
+            listHeight={256}
+            getPopupContainer={(triggerNode) => triggerNode.parentElement || document.body}
           />
           <Button
             type="primary"
