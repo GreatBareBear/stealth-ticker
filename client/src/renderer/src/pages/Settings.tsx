@@ -6,11 +6,14 @@ import { AdvancedTab } from '../components/settings/AdvancedTab'
 import { ChartTab } from '../components/settings/ChartTab'
 import { DashboardTab } from '../components/settings/DashboardTab'
 import { MembershipTab } from '../components/settings/MembershipTab'
-import { StoreContext } from '../StoreContext'
 
 function Settings(): React.JSX.Element {
   const [resetKey, setResetKey] = useState(0)
-  const originalStore = window.api.store
+  const originalStore = window?.api?.store || {
+    get: async () => null,
+    set: async () => {},
+    delete: async () => {}
+  }
   const draftState = useRef({
     drafts: {} as Record<string, any>,
     deleted: new Set<string>()
@@ -81,27 +84,27 @@ function Settings(): React.JSX.Element {
     {
       key: '1',
       label: '自选股票',
-      children: <StocksTab />
+      children: <StocksTab store={proxyStore} />
     },
     {
       key: '2',
       label: '显示',
-      children: <DisplayTab />
+      children: <DisplayTab store={proxyStore} />
     },
     {
       key: '3',
       label: '高级',
-      children: <AdvancedTab />
+      children: <AdvancedTab store={proxyStore} />
     },
     {
       key: '4',
       label: '股价图',
-      children: <ChartTab />
+      children: <ChartTab store={proxyStore} />
     },
     {
       key: '5',
       label: '数据看板',
-      children: <DashboardTab />
+      children: <DashboardTab store={proxyStore} />
     },
     {
       key: '6',
@@ -139,18 +142,16 @@ function Settings(): React.JSX.Element {
           overflow: 'hidden'
         }}
       >
-        <StoreContext.Provider value={proxyStore}>
-          <div key={resetKey} style={{ flex: 1, overflowY: 'auto', background: '#fff', paddingTop: 8 }}>
-            <Tabs
-              defaultActiveKey="1"
-              items={items}
-              tabPosition="top"
-              animated={{ inkBar: true, tabPane: true }}
-              size="small"
-              tabBarStyle={{ padding: '0 24px', margin: 0 }}
-            />
-          </div>
-        </StoreContext.Provider>
+        <div key={resetKey} style={{ flex: 1, overflowY: 'auto', background: '#fff', paddingTop: 8 }}>
+          <Tabs
+            defaultActiveKey="1"
+            items={items}
+            tabPosition="top"
+            animated={{ inkBar: true, tabPane: true }}
+            size="small"
+            tabBarStyle={{ padding: '0 24px', margin: 0 }}
+          />
+        </div>
         <div
           style={{
             padding: '12px 24px',

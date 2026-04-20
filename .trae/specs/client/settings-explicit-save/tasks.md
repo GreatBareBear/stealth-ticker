@@ -9,6 +9,9 @@
 - [x] Task 3: 优化子组件并发写入逻辑 (`AdvancedTab.tsx`, `DisplayTab.tsx`)
   - [x] SubTask 3.1: 将旧的 `settingsRef` 并发合并逻辑去除，使用 `lastSavePromise` 链中实时 await `window.api.store.get('settings')`（从拦截层）进行深拷贝合并。
 - [x] Task 4: 确保编译不报错 (`npm run typecheck:main` 和 `npm run typecheck:web`)。
+- [x] Task 5: 彻底解决 React 白屏崩溃和循环依赖问题
+  - [x] 弃用全局 StoreContext，改为使用属性传递 (Props Injection) 将 `proxyStore` 直接传递给各个子 Tab。
+  - [x] 增强容错：为所有 store 访问添加安全的回退逻辑 `window?.api?.store || { get: ... }`，防止初始化时因对象不存在导致的空指针崩溃。
 
 # Task Dependencies
 - [Task 2] depends on [Task 1]
