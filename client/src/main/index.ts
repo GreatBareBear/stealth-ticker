@@ -88,12 +88,19 @@ function openSettings(): void {
 
   settingsWindow.on('ready-to-show', () => {
     settingsWindow?.show()
+    settingsWindow?.webContents.send('settings-shown')
+  })
+
+  settingsWindow.on('show', () => {
+    settingsWindow?.webContents.send('settings-shown')
   })
 
   settingsWindow.on('close', (e) => {
-    if (isQuitting) return
-    e.preventDefault()
-    settingsWindow?.hide()
+    if (!isQuitting) {
+      e.preventDefault()
+      settingsWindow?.webContents.send('settings-closed')
+      settingsWindow?.hide()
+    }
   })
 
   settingsWindow.on('closed', () => {
@@ -305,6 +312,10 @@ app.whenReady().then(() => {
   }
 
   // electron-store IPC handlers
+  ipcMain.on('close-settings-window', () => {
+    settingsWindow?.hide()
+  })
+
   ipcMain.handle('store:get', (_event, key) => {
     if (!isValidKey(key)) return null
     return store.get(key)

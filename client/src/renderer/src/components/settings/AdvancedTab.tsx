@@ -21,14 +21,12 @@ const { Text } = Typography
 export function AdvancedTab(): React.JSX.Element {
   const [form] = Form.useForm()
   const [loading, setLoading] = useState(true)
-  const settingsRef = useRef<Record<string, any>>({})
   const lastSavePromise = useRef<Promise<void>>(Promise.resolve())
 
   useEffect(() => {
     const loadSettings = async (): Promise<void> => {
       try {
         const settings: any = await window.api.store.get('settings')
-        settingsRef.current = (settings || {}) as Record<string, any>
         if (settings) {
           form.setFieldsValue({
             ...settings,
@@ -46,24 +44,23 @@ export function AdvancedTab(): React.JSX.Element {
     loadSettings()
   }, [form])
 
-  const handleValuesChange = (
+  const handleValuesChange = async (
     _changedValues: Record<string, unknown>,
     allValues: Record<string, unknown>
-  ): void => {
+  ): Promise<void> => {
     try {
-      settingsRef.current = { ...settingsRef.current, ...allValues }
-
-      let bossKeyCombo = settingsRef.current.bossKeyCombo
-      if (settingsRef.current.bossKeyModifier && settingsRef.current.bossKey) {
-        const modifier = String(settingsRef.current.bossKeyModifier)
-        const key = String(settingsRef.current.bossKey).toUpperCase()
-        bossKeyCombo = `${modifier}+${key}`
-      }
-
-      settingsRef.current = { ...settingsRef.current, bossKeyCombo }
-
       lastSavePromise.current = lastSavePromise.current
-        .then(() => window.api.store.set('settings', settingsRef.current))
+        .then(async () => {
+          const currentSettings: any = (await window.api.store.get('settings')) || {}
+          let bossKeyCombo = currentSettings.bossKeyCombo
+          if (allValues.bossKeyModifier && allValues.bossKey) {
+            const modifier = allValues.bossKeyModifier as string
+            const key = (allValues.bossKey as string).toUpperCase()
+            bossKeyCombo = `${modifier}+${key}`
+          }
+          const newSettings = { ...currentSettings, ...allValues, bossKeyCombo }
+          await window.api.store.set('settings', newSettings)
+        })
         .catch((error) => {
           console.error('Failed to save settings:', error)
         })
@@ -87,9 +84,16 @@ export function AdvancedTab(): React.JSX.Element {
         searchMode: '本地加密'
       }
       form.setFieldsValue(defaultSettings)
-      const currentSettings = (await window.api.store.get('settings')) || {}
-      settingsRef.current = { ...(currentSettings as Record<string, any>), ...defaultSettings }
-      await window.api.store.set('settings', settingsRef.current)
+      
+      lastSavePromise.current = lastSavePromise.current
+        .then(async () => {
+          const currentSettings = (await window.api.store.get('settings')) || {}
+          await window.api.store.set('settings', { ...currentSettings, ...defaultSettings })
+        })
+        .catch((error) => {
+          console.error('Failed to save settings:', error)
+        })
+        
       message.success('已重置为默认设置')
     } catch (error) {
       console.error('Failed to reset settings:', error)

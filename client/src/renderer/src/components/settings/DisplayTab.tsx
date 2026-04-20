@@ -18,14 +18,12 @@ const { Title, Text } = Typography
 export function DisplayTab(): React.JSX.Element {
   const [form] = Form.useForm()
   const [loading, setLoading] = useState(true)
-  const settingsRef = useRef<Record<string, any>>({})
   const lastSavePromise = useRef<Promise<void>>(Promise.resolve())
 
   useEffect(() => {
     const loadSettings = async () => {
       try {
         const settings = await window.api.store.get('settings')
-        settingsRef.current = (settings || {}) as Record<string, any>
         if (settings) {
           form.setFieldsValue(settings)
         }
@@ -38,11 +36,14 @@ export function DisplayTab(): React.JSX.Element {
     loadSettings()
   }, [form])
 
-  const handleValuesChange = (_changedValues: any, allValues: any): void => {
+  const handleValuesChange = async (_changedValues: any, allValues: any) => {
     try {
-      settingsRef.current = { ...settingsRef.current, ...allValues }
       lastSavePromise.current = lastSavePromise.current
-        .then(() => window.api.store.set('settings', settingsRef.current))
+        .then(async () => {
+          const currentSettings = (await window.api.store.get('settings')) || {}
+          const newSettings = { ...currentSettings, ...allValues }
+          await window.api.store.set('settings', newSettings)
+        })
         .catch((error) => {
           console.error('Failed to save settings:', error)
         })
@@ -54,10 +55,14 @@ export function DisplayTab(): React.JSX.Element {
   const applyPreset = async (preset: Record<string, unknown>): Promise<void> => {
     try {
       const currentFormValues = form.getFieldsValue(true)
-      settingsRef.current = { ...settingsRef.current, ...currentFormValues, ...preset }
       form.setFieldsValue(preset)
+      
       lastSavePromise.current = lastSavePromise.current
-        .then(() => window.api.store.set('settings', settingsRef.current))
+        .then(async () => {
+          const currentSettings = (await window.api.store.get('settings')) || {}
+          const newSettings = { ...currentSettings, ...currentFormValues, ...preset }
+          await window.api.store.set('settings', newSettings)
+        })
         .catch((error) => {
           console.error('Failed to apply preset:', error)
         })
