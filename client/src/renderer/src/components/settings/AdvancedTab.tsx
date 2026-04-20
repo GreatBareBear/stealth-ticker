@@ -18,15 +18,18 @@ import {
 
 const { Text } = Typography
 
+import { useStore } from '../../pages/Settings'
+
 export function AdvancedTab(): React.JSX.Element {
   const [form] = Form.useForm()
   const [loading, setLoading] = useState(true)
   const lastSavePromise = useRef<Promise<void>>(Promise.resolve())
+  const store = useStore()
 
   useEffect(() => {
     const loadSettings = async (): Promise<void> => {
       try {
-        const settings: any = await window.api.store.get('settings')
+        const settings: any = await store.get('settings')
         if (settings) {
           form.setFieldsValue({
             ...settings,
@@ -51,7 +54,7 @@ export function AdvancedTab(): React.JSX.Element {
     try {
       lastSavePromise.current = lastSavePromise.current
         .then(async () => {
-          const currentSettings: any = (await window.api.store.get('settings')) || {}
+          const currentSettings: any = (await store.get('settings')) || {}
           let bossKeyCombo = currentSettings.bossKeyCombo
           if (allValues.bossKeyModifier && allValues.bossKey) {
             const modifier = allValues.bossKeyModifier as string
@@ -59,7 +62,7 @@ export function AdvancedTab(): React.JSX.Element {
             bossKeyCombo = `${modifier}+${key}`
           }
           const newSettings = { ...currentSettings, ...allValues, bossKeyCombo }
-          await window.api.store.set('settings', newSettings)
+          await store.set('settings', newSettings)
         })
         .catch((error) => {
           console.error('Failed to save settings:', error)
@@ -86,31 +89,31 @@ export function AdvancedTab(): React.JSX.Element {
       form.setFieldsValue(defaultSettings)
       
       lastSavePromise.current = lastSavePromise.current
-        .then(async () => {
-          const currentSettings = (await window.api.store.get('settings')) || {}
-          await window.api.store.set('settings', { ...currentSettings, ...defaultSettings })
-        })
-        .catch((error) => {
-          console.error('Failed to save settings:', error)
-        })
-        
-      message.success('已重置为默认设置')
-    } catch (error) {
-      console.error('Failed to reset settings:', error)
-      message.error('重置失败')
+          .then(async () => {
+            const currentSettings = (await store.get('settings')) || {}
+            await store.set('settings', { ...currentSettings, ...defaultSettings })
+          })
+          .catch((error) => {
+            console.error('Failed to save settings:', error)
+          })
+          
+        message.success('已重置为默认设置')
+      } catch (error) {
+        console.error('Failed to reset settings:', error)
+        message.error('重置失败')
+      }
     }
-  }
-
-  const handleClearData = async (): Promise<void> => {
-    try {
-      await window.api.store.delete('stocks')
-      await window.api.store.delete('alerts')
-      await window.api.store.delete('alertsGlobalPaused')
-      await window.api.store.delete('alertsTempPausedUntil')
-      await window.api.store.delete('alertsDndEnabled')
-      await window.api.store.delete('alertsDndStart')
-      await window.api.store.delete('alertsDndEnd')
-      await window.api.store.delete('alertsDndAllowedMethods')
+  
+    const handleClearData = async (): Promise<void> => {
+      try {
+        await store.delete('stocks')
+        await store.delete('alerts')
+        await store.delete('alertsGlobalPaused')
+        await store.delete('alertsTempPausedUntil')
+        await store.delete('alertsDndEnabled')
+        await store.delete('alertsDndStart')
+        await store.delete('alertsDndEnd')
+        await store.delete('alertsDndAllowedMethods')
       message.success('清理完成')
     } catch (error) {
       console.error('Failed to clear data:', error)

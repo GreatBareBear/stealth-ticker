@@ -134,7 +134,10 @@ function formatRemaining(ms: number): string {
   return `${m}分钟${s}秒`
 }
 
+import { useStore } from '../../pages/Settings'
+
 export function StocksTab(): React.JSX.Element {
+  const store = useStore()
   const [stocks, setStocks] = useState<Stock[]>([])
   const [loading, setLoading] = useState<boolean>(true)
 
@@ -167,7 +170,7 @@ export function StocksTab(): React.JSX.Element {
   useEffect(() => {
     const loadData = async (): Promise<void> => {
       try {
-        const savedAlerts = await window.api.store.get('alerts')
+        const savedAlerts = await store.get('alerts')
         if (savedAlerts && typeof savedAlerts === 'object') {
           let hasLegacyAlert = false
           const normalizedAlerts = Object.fromEntries(
@@ -190,11 +193,11 @@ export function StocksTab(): React.JSX.Element {
           ) as Record<string, AlertConfig>
           setAlerts(normalizedAlerts)
           if (hasLegacyAlert) {
-            await window.api.store.set('alerts', normalizedAlerts)
+            await store.set('alerts', normalizedAlerts)
           }
         }
 
-        const savedAlertsGlobalPaused = await window.api.store.get('alertsGlobalPaused')
+        const savedAlertsGlobalPaused = await store.get('alertsGlobalPaused')
         if (typeof savedAlertsGlobalPaused === 'boolean') {
           setAlertsGlobalPaused(savedAlertsGlobalPaused)
         }
@@ -206,11 +209,11 @@ export function StocksTab(): React.JSX.Element {
           savedAlertsDndEnd,
           savedAlertsDndAllowedMethods
         ] = await Promise.all([
-          window.api.store.get('alertsTempPausedUntil'),
-          window.api.store.get('alertsDndEnabled'),
-          window.api.store.get('alertsDndStart'),
-          window.api.store.get('alertsDndEnd'),
-          window.api.store.get('alertsDndAllowedMethods')
+          store.get('alertsTempPausedUntil'),
+          store.get('alertsDndEnabled'),
+          store.get('alertsDndStart'),
+          store.get('alertsDndEnd'),
+          store.get('alertsDndAllowedMethods')
         ])
 
         if (typeof savedAlertsTempPausedUntil === 'number' && Number.isFinite(savedAlertsTempPausedUntil)) {
@@ -236,7 +239,7 @@ export function StocksTab(): React.JSX.Element {
           setAlertsDndAllowedMethods(normalized)
         }
 
-        const savedStocks = await window.api.store.get('stocks')
+        const savedStocks = await store.get('stocks')
         if (savedStocks && Array.isArray(savedStocks)) {
           setStocks(savedStocks)
         } else {
@@ -259,7 +262,7 @@ export function StocksTab(): React.JSX.Element {
   const saveAlerts = async (newAlerts: Record<string, AlertConfig>): Promise<void> => {
     setAlerts(newAlerts)
     try {
-      await window.api.store.set('alerts', newAlerts)
+      await store.set('alerts', newAlerts)
     } catch (error) {
       console.error('Failed to save alerts:', error)
     }
@@ -268,7 +271,7 @@ export function StocksTab(): React.JSX.Element {
   const saveAlertsGlobalPaused = async (paused: boolean): Promise<void> => {
     setAlertsGlobalPaused(paused)
     try {
-      await window.api.store.set('alertsGlobalPaused', paused)
+      await store.set('alertsGlobalPaused', paused)
     } catch (error) {
       console.error('Failed to save alertsGlobalPaused:', error)
     }
@@ -277,7 +280,7 @@ export function StocksTab(): React.JSX.Element {
   const saveAlertsTempPausedUntil = async (until: number): Promise<void> => {
     setAlertsTempPausedUntil(until)
     try {
-      await window.api.store.set('alertsTempPausedUntil', until)
+      await store.set('alertsTempPausedUntil', until)
     } catch (error) {
       console.error('Failed to save alertsTempPausedUntil:', error)
     }
@@ -286,7 +289,7 @@ export function StocksTab(): React.JSX.Element {
   const saveAlertsDndEnabled = async (enabled: boolean): Promise<void> => {
     setAlertsDndEnabled(enabled)
     try {
-      await window.api.store.set('alertsDndEnabled', enabled)
+      await store.set('alertsDndEnabled', enabled)
     } catch (error) {
       console.error('Failed to save alertsDndEnabled:', error)
     }
@@ -295,7 +298,7 @@ export function StocksTab(): React.JSX.Element {
   const saveAlertsDndStart = async (value: string): Promise<void> => {
     setAlertsDndStart(value)
     try {
-      await window.api.store.set('alertsDndStart', value)
+      await store.set('alertsDndStart', value)
     } catch (error) {
       console.error('Failed to save alertsDndStart:', error)
     }
@@ -304,7 +307,7 @@ export function StocksTab(): React.JSX.Element {
   const saveAlertsDndEnd = async (value: string): Promise<void> => {
     setAlertsDndEnd(value)
     try {
-      await window.api.store.set('alertsDndEnd', value)
+      await store.set('alertsDndEnd', value)
     } catch (error) {
       console.error('Failed to save alertsDndEnd:', error)
     }
@@ -313,7 +316,7 @@ export function StocksTab(): React.JSX.Element {
   const saveAlertsDndAllowedMethods = async (methods: Array<'popup' | 'sound' | 'blink'>): Promise<void> => {
     setAlertsDndAllowedMethods(methods)
     try {
-      await window.api.store.set('alertsDndAllowedMethods', methods)
+      await store.set('alertsDndAllowedMethods', methods)
     } catch (error) {
       console.error('Failed to save alertsDndAllowedMethods:', error)
     }
@@ -380,7 +383,7 @@ export function StocksTab(): React.JSX.Element {
   const updateStocks = async (newStocks: Stock[]): Promise<void> => {
     setStocks(newStocks)
     try {
-      await window.api.store.set('stocks', newStocks)
+      await store.set('stocks', newStocks)
     } catch (error) {
       console.error('Failed to save stocks:', error)
     }

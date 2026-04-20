@@ -15,15 +15,18 @@ import {
 
 const { Title, Text } = Typography
 
+import { useStore } from '../../pages/Settings'
+
 export function DisplayTab(): React.JSX.Element {
   const [form] = Form.useForm()
   const [loading, setLoading] = useState(true)
   const lastSavePromise = useRef<Promise<void>>(Promise.resolve())
+  const store = useStore()
 
   useEffect(() => {
     const loadSettings = async () => {
       try {
-        const settings = await window.api.store.get('settings')
+        const settings = await store.get('settings')
         if (settings) {
           form.setFieldsValue(settings)
         }
@@ -40,9 +43,9 @@ export function DisplayTab(): React.JSX.Element {
     try {
       lastSavePromise.current = lastSavePromise.current
         .then(async () => {
-          const currentSettings = (await window.api.store.get('settings')) || {}
+          const currentSettings = (await store.get('settings')) || {}
           const newSettings = { ...currentSettings, ...allValues }
-          await window.api.store.set('settings', newSettings)
+          await store.set('settings', newSettings)
         })
         .catch((error) => {
           console.error('Failed to save settings:', error)
@@ -59,9 +62,9 @@ export function DisplayTab(): React.JSX.Element {
       
       lastSavePromise.current = lastSavePromise.current
         .then(async () => {
-          const currentSettings = (await window.api.store.get('settings')) || {}
+          const currentSettings = (await store.get('settings')) || {}
           const newSettings = { ...currentSettings, ...currentFormValues, ...preset }
-          await window.api.store.set('settings', newSettings)
+          await store.set('settings', newSettings)
         })
         .catch((error) => {
           console.error('Failed to apply preset:', error)
