@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import {
   Collapse,
   Form,
@@ -21,6 +21,7 @@ const { Text } = Typography
 export function AdvancedTab(): React.JSX.Element {
   const [form] = Form.useForm()
   const [loading, setLoading] = useState(true)
+  const lastSavePromise = useRef<Promise<void>>(Promise.resolve())
 
   useEffect(() => {
     const loadSettings = async (): Promise<void> => {
@@ -48,17 +49,21 @@ export function AdvancedTab(): React.JSX.Element {
     allValues: Record<string, unknown>
   ): Promise<void> => {
     try {
-      const currentSettings: any = (await window.api.store.get('settings')) || {}
-
-      let bossKeyCombo = currentSettings.bossKeyCombo
-      if (allValues.bossKeyModifier && allValues.bossKey) {
-        const modifier = allValues.bossKeyModifier as string
-        const key = (allValues.bossKey as string).toUpperCase()
-        bossKeyCombo = `${modifier}+${key}`
-      }
-
-      const newSettings = { ...currentSettings, ...allValues, bossKeyCombo }
-      await window.api.store.set('settings', newSettings)
+      lastSavePromise.current = lastSavePromise.current
+        .then(async () => {
+          const currentSettings: any = (await window.api.store.get('settings')) || {}
+          let bossKeyCombo = currentSettings.bossKeyCombo
+          if (allValues.bossKeyModifier && allValues.bossKey) {
+            const modifier = allValues.bossKeyModifier as string
+            const key = (allValues.bossKey as string).toUpperCase()
+            bossKeyCombo = `${modifier}+${key}`
+          }
+          const newSettings = { ...currentSettings, ...allValues, bossKeyCombo }
+          await window.api.store.set('settings', newSettings)
+        })
+        .catch((error) => {
+          console.error('Failed to save settings:', error)
+        })
     } catch (error) {
       console.error('Failed to save settings:', error)
     }
@@ -79,8 +84,16 @@ export function AdvancedTab(): React.JSX.Element {
         searchMode: '本地加密'
       }
       form.setFieldsValue(defaultSettings)
-      const currentSettings = (await window.api.store.get('settings')) || {}
-      await window.api.store.set('settings', { ...currentSettings, ...defaultSettings })
+      
+      lastSavePromise.current = lastSavePromise.current
+        .then(async () => {
+          const currentSettings = (await window.api.store.get('settings')) || {}
+          await window.api.store.set('settings', { ...currentSettings, ...defaultSettings })
+        })
+        .catch((error) => {
+          console.error('Failed to save settings:', error)
+        })
+        
       message.success('已重置为默认设置')
     } catch (error) {
       console.error('Failed to reset settings:', error)

@@ -14,6 +14,11 @@ let mainWindow: BrowserWindow | null = null
 let aboutWindow: BrowserWindow | null = null
 let isPanelLocked = store.get('panelLocked') === true
 let alertService: AlertService | null = null
+let isQuitting = false
+
+app.on('before-quit', () => {
+  isQuitting = true
+})
 
 function openAbout(): void {
   if (aboutWindow) {
@@ -57,6 +62,7 @@ function openAbout(): void {
 function openSettings(): void {
   if (settingsWindow) {
     if (settingsWindow.isMinimized()) settingsWindow.restore()
+    settingsWindow.show()
     settingsWindow.focus()
     return
   }
@@ -82,6 +88,19 @@ function openSettings(): void {
 
   settingsWindow.on('ready-to-show', () => {
     settingsWindow?.show()
+    settingsWindow?.webContents.send('settings-shown')
+  })
+
+  settingsWindow.on('show', () => {
+    settingsWindow?.webContents.send('settings-shown')
+  })
+
+  settingsWindow.on('close', (e) => {
+    if (!isQuitting) {
+      e.preventDefault()
+      settingsWindow?.webContents.send('settings-closed')
+      settingsWindow?.hide()
+    }
   })
 
   settingsWindow.on('closed', () => {
@@ -293,6 +312,10 @@ app.whenReady().then(() => {
   }
 
   // electron-store IPC handlers
+  ipcMain.on('close-settings-window', () => {
+    settingsWindow?.hide()
+  })
+
   ipcMain.handle('store:get', (_event, key) => {
     if (!isValidKey(key)) return null
     return store.get(key)

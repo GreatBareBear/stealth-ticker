@@ -1,5 +1,5 @@
-import React from 'react'
-import { Tabs, ConfigProvider } from 'antd'
+import React, { useEffect, useRef, useState } from 'react'
+import { Tabs, ConfigProvider, Button, Space } from 'antd'
 import { StocksTab } from '../components/settings/StocksTab'
 import { DisplayTab } from '../components/settings/DisplayTab'
 import { AdvancedTab } from '../components/settings/AdvancedTab'
@@ -7,7 +7,78 @@ import { ChartTab } from '../components/settings/ChartTab'
 import { DashboardTab } from '../components/settings/DashboardTab'
 import { MembershipTab } from '../components/settings/MembershipTab'
 
+const originalStore = { ...window.api.store }
+
 function Settings(): React.JSX.Element {
+  const [resetKey, setResetKey] = useState(0)
+  const draftState = useRef({
+    drafts: {} as Record<string, any>,
+    deleted: new Set<string>()
+  })
+
+  useEffect(() => {
+    // Intercept window.api.store
+    window.api.store = {
+      get: async (key: string) => {
+        if (draftState.current.deleted.has(key)) return undefined
+        if (key in draftState.current.drafts) return draftState.current.drafts[key]
+        return await originalStore.get(key)
+      },
+      set: async (key: string, value: any) => {
+        draftState.current.drafts[key] = value
+        draftState.current.deleted.delete(key)
+      },
+      delete: async (key: string) => {
+        delete draftState.current.drafts[key]
+        draftState.current.deleted.add(key)
+      }
+    } as any
+
+    const ipcRenderer = (window as any).electron.ipcRenderer
+
+    const handleShown = () => {
+      draftState.current.drafts = {}
+      draftState.current.deleted.clear()
+      setResetKey(Date.now())
+    }
+
+    const handleClosed = () => {
+      draftState.current.drafts = {}
+      draftState.current.deleted.clear()
+    }
+
+    ipcRenderer.on('settings-shown', handleShown)
+    ipcRenderer.on('settings-closed', handleClosed)
+
+    return () => {
+      window.api.store = originalStore as any
+      ipcRenderer.removeListener('settings-shown', handleShown)
+      ipcRenderer.removeListener('settings-closed', handleClosed)
+    }
+  }, [])
+
+  const handleConfirm = async () => {
+    try {
+      for (const key of Array.from(draftState.current.deleted)) {
+        await originalStore.delete(key)
+      }
+      for (const [key, value] of Object.entries(draftState.current.drafts)) {
+        await originalStore.set(key, value)
+      }
+      draftState.current.drafts = {}
+      draftState.current.deleted.clear()
+      ;(window as any).electron.ipcRenderer.send('close-settings-window')
+    } catch (error) {
+      console.error('Failed to save settings', error)
+    }
+  }
+
+  const handleCancel = () => {
+    draftState.current.drafts = {}
+    draftState.current.deleted.clear()
+    ;(window as any).electron.ipcRenderer.send('close-settings-window')
+  }
+
   const items = [
     {
       key: '1',
@@ -70,7 +141,7 @@ function Settings(): React.JSX.Element {
           overflow: 'hidden'
         }}
       >
-        <div style={{ flex: 1, overflowY: 'auto', background: '#fff', paddingTop: 8 }}>
+        <div key={resetKey} style={{ flex: 1, overflowY: 'auto', background: '#fff', paddingTop: 8 }}>
           <Tabs
             defaultActiveKey="1"
             items={items}
@@ -79,6 +150,22 @@ function Settings(): React.JSX.Element {
             size="small"
             tabBarStyle={{ padding: '0 24px', margin: 0 }}
           />
+        </div>
+        <div
+          style={{
+            padding: '12px 24px',
+            background: '#fff',
+            borderTop: '1px solid #f0f0f0',
+            display: 'flex',
+            justifyContent: 'flex-end'
+          }}
+        >
+          <Space>
+            <Button onClick={handleCancel}>取消</Button>
+            <Button type="primary" onClick={handleConfirm}>
+              确定
+            </Button>
+          </Space>
         </div>
       </div>
     </ConfigProvider>
