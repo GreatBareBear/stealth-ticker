@@ -3,7 +3,7 @@ import { Form, Select, Typography, Spin } from 'antd'
 
 const { Title } = Typography
 
-import { useStore } from '../../pages/Settings'
+import { useStore } from '../../StoreContext'
 
 export function ChartTab(): React.JSX.Element {
   const [form] = Form.useForm()

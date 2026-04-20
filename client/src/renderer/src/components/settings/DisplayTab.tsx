@@ -15,7 +15,7 @@ import {
 
 const { Title, Text } = Typography
 
-import { useStore } from '../../pages/Settings'
+import { useStore } from '../../StoreContext'
 
 export function DisplayTab(): React.JSX.Element {
   const [form] = Form.useForm()

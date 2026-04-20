@@ -28,7 +28,7 @@ const DEFAULT_CONFIG: DashboardConfig = {
   showTopIndex: true
 }
 
-import { useStore } from '../../pages/Settings'
+import { useStore } from '../../StoreContext'
 
 export function DashboardTab(): React.JSX.Element {
   const [loading, setLoading] = useState(true)
@@ -41,7 +41,7 @@ export function DashboardTab(): React.JSX.Element {
 
   const loadConfig = async (): Promise<void> => {
     try {
-      const savedConfig = await store.get<DashboardConfig>('dashboard')
+      const savedConfig = await store.get('dashboard')
       if (savedConfig) {
         setConfig({ ...DEFAULT_CONFIG, ...savedConfig })
       }
