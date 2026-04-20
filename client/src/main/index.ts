@@ -14,6 +14,11 @@ let mainWindow: BrowserWindow | null = null
 let aboutWindow: BrowserWindow | null = null
 let isPanelLocked = store.get('panelLocked') === true
 let alertService: AlertService | null = null
+let isQuitting = false
+
+app.on('before-quit', () => {
+  isQuitting = true
+})
 
 function openAbout(): void {
   if (aboutWindow) {
@@ -57,6 +62,7 @@ function openAbout(): void {
 function openSettings(): void {
   if (settingsWindow) {
     if (settingsWindow.isMinimized()) settingsWindow.restore()
+    settingsWindow.show()
     settingsWindow.focus()
     return
   }
@@ -82,6 +88,12 @@ function openSettings(): void {
 
   settingsWindow.on('ready-to-show', () => {
     settingsWindow?.show()
+  })
+
+  settingsWindow.on('close', (e) => {
+    if (isQuitting) return
+    e.preventDefault()
+    settingsWindow?.hide()
   })
 
   settingsWindow.on('closed', () => {

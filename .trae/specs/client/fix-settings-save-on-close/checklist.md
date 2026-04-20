@@ -1,5 +1,5 @@
-- [ ] 设置窗口关闭时默认执行隐藏而非销毁（renderer 不被销毁）。
-- [ ] `AdvancedTab` 与 `DisplayTab` 的设置写入采用串行化/防抖合并策略，避免并发乱序覆盖。
+- [x] 设置窗口关闭时默认执行隐藏而非销毁（renderer 不被销毁）。
+- [x] `AdvancedTab` 与 `DisplayTab` 的设置写入采用串行化/防抖合并策略，避免并发乱序覆盖。
 - [ ] 用户修改设置后立即关闭设置窗口，再次打开仍显示最新设置值。
 - [ ] 高频连续修改多个设置项后，最终持久化结果与最后一次 UI 状态一致。
 - [ ] 运行 `npm run typecheck:main` 与 `npm run typecheck:web` 均无 TypeScript 错误。
