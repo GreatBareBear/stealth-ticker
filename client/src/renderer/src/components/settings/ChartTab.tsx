@@ -3,14 +3,17 @@ import { Form, Select, Typography, Spin } from 'antd'
 
 const { Title } = Typography
 
+import { useStore } from '../../pages/Settings'
+
 export function ChartTab(): React.JSX.Element {
   const [form] = Form.useForm()
   const [loading, setLoading] = useState(true)
+  const store = useStore()
 
   useEffect(() => {
     const loadSettings = async () => {
       try {
-        const settings = await window.api.store.get('chartSettings')
+        const settings = await store.get('chartSettings')
         if (settings) {
           form.setFieldsValue(settings)
         }
@@ -25,9 +28,9 @@ export function ChartTab(): React.JSX.Element {
 
   const handleValuesChange = async (_changedValues: any, allValues: any) => {
     try {
-      const currentSettings = (await window.api.store.get('chartSettings')) || {}
+      const currentSettings = (await store.get('chartSettings')) || {}
       const newSettings = { ...currentSettings, ...allValues }
-      await window.api.store.set('chartSettings', newSettings)
+      await store.set('chartSettings', newSettings)
     } catch (error) {
       console.error('Failed to save chart settings:', error)
     }

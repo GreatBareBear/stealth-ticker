@@ -28,9 +28,12 @@ const DEFAULT_CONFIG: DashboardConfig = {
   showTopIndex: true
 }
 
+import { useStore } from '../../pages/Settings'
+
 export function DashboardTab(): React.JSX.Element {
   const [loading, setLoading] = useState(true)
   const [config, setConfig] = useState<DashboardConfig>(DEFAULT_CONFIG)
+  const store = useStore()
 
   useEffect(() => {
     loadConfig()
@@ -38,7 +41,7 @@ export function DashboardTab(): React.JSX.Element {
 
   const loadConfig = async (): Promise<void> => {
     try {
-      const savedConfig = await window.api.store.get<DashboardConfig>('dashboard')
+      const savedConfig = await store.get<DashboardConfig>('dashboard')
       if (savedConfig) {
         setConfig({ ...DEFAULT_CONFIG, ...savedConfig })
       }
@@ -53,7 +56,7 @@ export function DashboardTab(): React.JSX.Element {
   const saveConfig = async (newConfig: DashboardConfig): Promise<void> => {
     setConfig(newConfig)
     try {
-      await window.api.store.set('dashboard', newConfig)
+      await store.set('dashboard', newConfig)
     } catch (error) {
       console.error('Failed to save dashboard config:', error)
       message.error('保存看板设置失败')

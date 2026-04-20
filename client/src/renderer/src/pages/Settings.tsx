@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useEffect, useRef, useState, createContext, useContext } from 'react'
 import { Tabs, ConfigProvider, Button, Space } from 'antd'
 import { StocksTab } from '../components/settings/StocksTab'
 import { DisplayTab } from '../components/settings/DisplayTab'
@@ -7,33 +7,34 @@ import { ChartTab } from '../components/settings/ChartTab'
 import { DashboardTab } from '../components/settings/DashboardTab'
 import { MembershipTab } from '../components/settings/MembershipTab'
 
-const originalStore = { ...window.api.store }
+export const StoreContext = createContext<any>(null)
+export const useStore = () => useContext(StoreContext) || window.api.store
 
 function Settings(): React.JSX.Element {
   const [resetKey, setResetKey] = useState(0)
+  const originalStore = window.api.store
   const draftState = useRef({
     drafts: {} as Record<string, any>,
     deleted: new Set<string>()
   })
 
-  useEffect(() => {
-    // Intercept window.api.store
-    window.api.store = {
-      get: async (key: string) => {
-        if (draftState.current.deleted.has(key)) return undefined
-        if (key in draftState.current.drafts) return draftState.current.drafts[key]
-        return await originalStore.get(key)
-      },
-      set: async (key: string, value: any) => {
-        draftState.current.drafts[key] = value
-        draftState.current.deleted.delete(key)
-      },
-      delete: async (key: string) => {
-        delete draftState.current.drafts[key]
-        draftState.current.deleted.add(key)
-      }
-    } as any
+  const proxyStore = {
+    get: async (key: string) => {
+      if (draftState.current.deleted.has(key)) return undefined
+      if (key in draftState.current.drafts) return draftState.current.drafts[key]
+      return await originalStore.get(key)
+    },
+    set: async (key: string, value: any) => {
+      draftState.current.drafts[key] = value
+      draftState.current.deleted.delete(key)
+    },
+    delete: async (key: string) => {
+      delete draftState.current.drafts[key]
+      draftState.current.deleted.add(key)
+    }
+  }
 
+  useEffect(() => {
     const ipcRenderer = (window as any).electron.ipcRenderer
 
     const handleShown = () => {
@@ -51,7 +52,6 @@ function Settings(): React.JSX.Element {
     ipcRenderer.on('settings-closed', handleClosed)
 
     return () => {
-      window.api.store = originalStore as any
       ipcRenderer.removeListener('settings-shown', handleShown)
       ipcRenderer.removeListener('settings-closed', handleClosed)
     }
@@ -141,16 +141,18 @@ function Settings(): React.JSX.Element {
           overflow: 'hidden'
         }}
       >
-        <div key={resetKey} style={{ flex: 1, overflowY: 'auto', background: '#fff', paddingTop: 8 }}>
-          <Tabs
-            defaultActiveKey="1"
-            items={items}
-            tabPosition="top"
-            animated={{ inkBar: true, tabPane: true }}
-            size="small"
-            tabBarStyle={{ padding: '0 24px', margin: 0 }}
-          />
-        </div>
+        <StoreContext.Provider value={proxyStore}>
+          <div key={resetKey} style={{ flex: 1, overflowY: 'auto', background: '#fff', paddingTop: 8 }}>
+            <Tabs
+              defaultActiveKey="1"
+              items={items}
+              tabPosition="top"
+              animated={{ inkBar: true, tabPane: true }}
+              size="small"
+              tabBarStyle={{ padding: '0 24px', margin: 0 }}
+            />
+          </div>
+        </StoreContext.Provider>
         <div
           style={{
             padding: '12px 24px',
