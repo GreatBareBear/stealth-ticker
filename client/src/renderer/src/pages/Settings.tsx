@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState, createContext, useContext } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { Tabs, ConfigProvider, Button, Space } from 'antd'
 import { StocksTab } from '../components/settings/StocksTab'
 import { DisplayTab } from '../components/settings/DisplayTab'
@@ -6,9 +6,7 @@ import { AdvancedTab } from '../components/settings/AdvancedTab'
 import { ChartTab } from '../components/settings/ChartTab'
 import { DashboardTab } from '../components/settings/DashboardTab'
 import { MembershipTab } from '../components/settings/MembershipTab'
-
-export const StoreContext = createContext<any>(null)
-export const useStore = () => useContext(StoreContext) || window.api.store
+import { StoreContext } from '../StoreContext'
 
 function Settings(): React.JSX.Element {
   const [resetKey, setResetKey] = useState(0)

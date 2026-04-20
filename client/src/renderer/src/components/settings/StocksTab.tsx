@@ -134,7 +134,7 @@ function formatRemaining(ms: number): string {
   return `${m}分钟${s}秒`
 }
 
-import { useStore } from '../../pages/Settings'
+import { useStore } from '../../StoreContext'
 
 export function StocksTab(): React.JSX.Element {
   const store = useStore()
