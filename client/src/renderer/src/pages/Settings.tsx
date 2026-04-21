@@ -49,14 +49,14 @@ function Settings(): React.JSX.Element {
       draftState.current.deleted.clear()
     }
 
-    if (ipcRenderer) {
-      ipcRenderer.on('settings-shown', handleShown)
-      ipcRenderer.on('settings-closed', handleClosed)
+    if (!ipcRenderer) return
 
-      return () => {
-        ipcRenderer.removeListener('settings-shown', handleShown)
-        ipcRenderer.removeListener('settings-closed', handleClosed)
-      }
+    ipcRenderer.on('settings-shown', handleShown)
+    ipcRenderer.on('settings-closed', handleClosed)
+
+    return () => {
+      ipcRenderer.removeListener('settings-shown', handleShown)
+      ipcRenderer.removeListener('settings-closed', handleClosed)
     }
   }, [])
 

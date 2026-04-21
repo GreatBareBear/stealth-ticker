@@ -10,7 +10,7 @@
   - [x] SubTask 2.4: 将 `DisplayTab.tsx` 的 `onValuesChange` 写入逻辑迁移到新的写入器。
 - [ ] Task 3: 验证
   - [ ] SubTask 3.1: 复现并验证“修改后立即关闭设置窗口”仍可保存。
-  - [ ] SubTask 3.2: 运行 `npm run typecheck:main` 与 `npm run typecheck:web` 均通过。
+  - [x] SubTask 3.2: 运行 `npm run typecheck:node` 与 `npm run typecheck:web` 均通过。
 
 # Task Dependencies
 - [Task 2] depends on [Task 1]
