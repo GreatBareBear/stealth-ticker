@@ -64,14 +64,28 @@ function Settings(): React.JSX.Element {
       draftState.current.deleted.clear()
     }
 
-    if (!ipcRenderer) return
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'hidden') {
+        handleClosed()
+      } else {
+        handleShown()
+      }
+    }
 
-    ipcRenderer.on('settings-shown', handleShown)
-    ipcRenderer.on('settings-closed', handleClosed)
+    if (ipcRenderer) {
+      ipcRenderer.on('settings-shown', handleShown)
+      ipcRenderer.on('settings-closed', handleClosed)
+    } else {
+      document.addEventListener('visibilitychange', handleVisibilityChange)
+    }
 
     return () => {
-      ipcRenderer.removeListener('settings-shown', handleShown)
-      ipcRenderer.removeListener('settings-closed', handleClosed)
+      if (ipcRenderer) {
+        ipcRenderer.removeListener('settings-shown', handleShown)
+        ipcRenderer.removeListener('settings-closed', handleClosed)
+      } else {
+        document.removeEventListener('visibilitychange', handleVisibilityChange)
+      }
     }
   }, [])
 
