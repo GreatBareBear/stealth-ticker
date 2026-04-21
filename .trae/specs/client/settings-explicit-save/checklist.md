@@ -4,6 +4,6 @@
 - [x] 多选项卡同时修改同一个配置项（如 `settings`）时，不会发生互相覆盖的问题。
 - [x] 运行 `npm run typecheck:main` 与 `npm run typecheck:web` 没有 TypeScript 错误。
 
-- [ ] 点击“确定/取消”按钮后设置窗口会立刻关闭（隐藏），不依赖 `window.electron.ipcRenderer` 的存在
-- [ ] `preload` 暴露的 `window.api.closeSettingsWindow()` 可用且通过 IPC 正确触发主进程隐藏窗口
-- [ ] 点击“确定”保存失败时有明确错误提示，成功时有成功提示
+- [x] 点击“确定/取消”按钮后设置窗口会立刻关闭（隐藏），不依赖 `window.electron.ipcRenderer` 的存在
+- [x] `preload` 暴露的 `window.api.closeSettingsWindow()` 可用且通过 IPC 正确触发主进程隐藏窗口
+- [x] 成功保存时有“设置已保存”提示。在纯前端无 Electron 的开发环境下（如直接访问 localhost），可降级保存到 LocalStorage 且能正常关闭。

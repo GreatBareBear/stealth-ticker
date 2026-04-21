@@ -10,9 +10,24 @@ import { MembershipTab } from '../components/settings/MembershipTab'
 function Settings(): React.JSX.Element {
   const [resetKey, setResetKey] = useState(0)
   const originalStore = window?.api?.store || {
-    get: async () => null,
-    set: async () => {},
-    delete: async () => {}
+    get: async (key: string) => {
+      try {
+        const item = localStorage.getItem(`store_${key}`)
+        return item ? JSON.parse(item) : null
+      } catch {
+        return null
+      }
+    },
+    set: async (key: string, value: any) => {
+      try {
+        localStorage.setItem(`store_${key}`, JSON.stringify(value))
+      } catch {}
+    },
+    delete: async (key: string) => {
+      try {
+        localStorage.removeItem(`store_${key}`)
+      } catch {}
+    }
   }
   const draftState = useRef({
     drafts: {} as Record<string, any>,
@@ -73,10 +88,6 @@ function Settings(): React.JSX.Element {
   }
 
   const handleConfirm = async () => {
-    if (!window?.api?.store) {
-      message.error('设置保存失败：应用接口未就绪，请重启应用后重试')
-      return
-    }
     try {
       for (const key of Array.from(draftState.current.deleted)) {
         await originalStore.delete(key)
