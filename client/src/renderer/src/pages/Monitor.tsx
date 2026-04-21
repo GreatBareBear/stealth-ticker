@@ -77,10 +77,10 @@ function Monitor(): React.JSX.Element {
       }
     }
 
-    window.electron.ipcRenderer.on('window-locked', handleLock)
-    
+    window?.electron?.ipcRenderer?.on('window-locked', handleLock)
+
     return () => {
-      window.electron.ipcRenderer.removeListener('window-locked', handleLock)
+      window?.electron?.ipcRenderer?.removeListener('window-locked', handleLock)
     }
   }, [])
 
@@ -99,7 +99,7 @@ function Monitor(): React.JSX.Element {
       const deltaX = e.screenX - dragPosRef.current.x
       const deltaY = e.screenY - dragPosRef.current.y
       dragPosRef.current = { x: e.screenX, y: e.screenY }
-      window.electron.ipcRenderer.send('drag-window', { deltaX, deltaY })
+      window?.electron?.ipcRenderer?.send('drag-window', { deltaX, deltaY })
     }
   }
 
@@ -117,7 +117,7 @@ function Monitor(): React.JSX.Element {
     const observer = new ResizeObserver((entries) => {
       for (const entry of entries) {
         const target = entry.target as HTMLElement
-        window.electron.ipcRenderer.send('resize-window', {
+        window?.electron?.ipcRenderer?.send('resize-window', {
           width: target.offsetWidth,
           height: target.offsetHeight
         })
@@ -139,7 +139,7 @@ function Monitor(): React.JSX.Element {
       const active = isHovering && shouldUnlock
       if (active !== isTempUnlocked) {
         isTempUnlocked = active
-        window.api.tempUnlock(active)
+        window?.api?.tempUnlock(active)
       }
     }
 
@@ -168,7 +168,7 @@ function Monitor(): React.JSX.Element {
       document.removeEventListener('mouseleave', handleMouseLeave)
       document.removeEventListener('keyup', handleKeyUp)
       if (isTempUnlocked) {
-        window.api.tempUnlock(false)
+        window?.api?.tempUnlock(false)
       }
     }
   }, [])
@@ -177,16 +177,16 @@ function Monitor(): React.JSX.Element {
     e.preventDefault()
     if (isLocked) return
     if (settings.enableContextMenu === false) return
-    window.electron.ipcRenderer.send('show-context-menu')
+    window?.electron?.ipcRenderer?.send('show-context-menu')
   }
 
   const loadConfigAndData = React.useCallback(async (): Promise<void> => {
     try {
-      const storeSettings = await window.api.store.get('settings')
+      const storeSettings = await window?.api?.store?.get('settings')
       const currentSettings = { ...DEFAULT_SETTINGS, ...(storeSettings || {}) }
       setSettings(currentSettings)
 
-      const storeStocks = await window.api.store.get('stocks')
+      const storeStocks = await window?.api?.store?.get('stocks')
       const currentStocks =
         Array.isArray(storeStocks) && storeStocks.length > 0 ? storeStocks : DEFAULT_STOCKS
       setStocks(currentStocks)
@@ -204,10 +204,10 @@ function Monitor(): React.JSX.Element {
       setStockData(newData)
     }
     
-    window.api.onStockDataUpdated(handleStockData)
+    window?.api?.onStockDataUpdated?.(handleStockData)
 
     return () => {
-      window.api.offStockDataUpdated()
+      window?.api?.offStockDataUpdated?.()
     }
   }, [loadConfigAndData])
 
@@ -216,10 +216,10 @@ function Monitor(): React.JSX.Element {
       loadConfigAndData()
     }
 
-    window.electron.ipcRenderer.on('window-shown', handleShown)
+    window?.electron?.ipcRenderer?.on('window-shown', handleShown)
 
     return () => {
-      window.electron.ipcRenderer.removeListener('window-shown', handleShown)
+      window?.electron?.ipcRenderer?.removeListener('window-shown', handleShown)
     }
   }, [loadConfigAndData])
 

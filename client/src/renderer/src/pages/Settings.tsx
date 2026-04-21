@@ -36,7 +36,7 @@ function Settings(): React.JSX.Element {
   }
 
   useEffect(() => {
-    const ipcRenderer = (window as any).electron.ipcRenderer
+    const ipcRenderer = (window as any).electron?.ipcRenderer
 
     const handleShown = () => {
       draftState.current.drafts = {}
@@ -49,12 +49,14 @@ function Settings(): React.JSX.Element {
       draftState.current.deleted.clear()
     }
 
-    ipcRenderer.on('settings-shown', handleShown)
-    ipcRenderer.on('settings-closed', handleClosed)
+    if (ipcRenderer) {
+      ipcRenderer.on('settings-shown', handleShown)
+      ipcRenderer.on('settings-closed', handleClosed)
 
-    return () => {
-      ipcRenderer.removeListener('settings-shown', handleShown)
-      ipcRenderer.removeListener('settings-closed', handleClosed)
+      return () => {
+        ipcRenderer.removeListener('settings-shown', handleShown)
+        ipcRenderer.removeListener('settings-closed', handleClosed)
+      }
     }
   }, [])
 
@@ -68,7 +70,7 @@ function Settings(): React.JSX.Element {
       }
       draftState.current.drafts = {}
       draftState.current.deleted.clear()
-      ;(window as any).electron.ipcRenderer.send('close-settings-window')
+      ;(window as any).electron?.ipcRenderer?.send('close-settings-window')
     } catch (error) {
       console.error('Failed to save settings', error)
     }
@@ -77,7 +79,7 @@ function Settings(): React.JSX.Element {
   const handleCancel = () => {
     draftState.current.drafts = {}
     draftState.current.deleted.clear()
-    ;(window as any).electron.ipcRenderer.send('close-settings-window')
+    ;(window as any).electron?.ipcRenderer?.send('close-settings-window')
   }
 
   const items = [
