@@ -24,6 +24,10 @@
   - [x] SubTask 7.2: 为关闭行为增加多重兜底（`window.api.closeSettingsWindow` → `ipcRenderer.send` → `window.close()`）
   - [x] SubTask 7.3: 运行 `npm run typecheck:web` 与 `npm run typecheck:node` 均通过
 
+- [x] Task 8: 支持浏览器/纯前端环境下的设置修改与持久化测试
+  - [x] SubTask 8.1: 在 `Settings.tsx` 中，将 `window.api.store` 的回退层实现改为使用 `localStorage` 的虚拟 Store，并去除阻止保存的错误提示。
+  - [x] SubTask 8.2: 在 `Monitor.tsx` 同样增加对 `localStorage` 的兜底，保证浏览器环境也能完整测试整个数据流的存储和读取。
+
 # Task Dependencies
 - [Task 2] depends on [Task 1]
 - [Task 3] depends on [Task 2]

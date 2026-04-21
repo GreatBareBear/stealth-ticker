@@ -181,13 +181,25 @@ function Monitor(): React.JSX.Element {
     window?.electron?.ipcRenderer?.send('show-context-menu')
   }
 
+  const fallbackStore = {
+    get: async (key: string) => {
+      try {
+        const item = localStorage.getItem(`store_${key}`)
+        return item ? JSON.parse(item) : null
+      } catch {
+        return null
+      }
+    }
+  }
+
   const loadConfigAndData = React.useCallback(async (): Promise<void> => {
     try {
-      const storeSettings = await window?.api?.store?.get?.('settings')
+      const getStore = (key: string) => window?.api?.store?.get?.(key) ?? fallbackStore.get(key)
+      const storeSettings = await getStore('settings')
       const currentSettings = { ...DEFAULT_SETTINGS, ...(storeSettings || {}) }
       setSettings(currentSettings)
 
-      const storeStocks = await window?.api?.store?.get?.('stocks')
+      const storeStocks = await getStore('stocks')
       const currentStocks =
         Array.isArray(storeStocks) && storeStocks.length > 0 ? storeStocks : DEFAULT_STOCKS
       setStocks(currentStocks)
