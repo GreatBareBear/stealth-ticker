@@ -7,3 +7,4 @@
 - [x] 点击“确定/取消”按钮后设置窗口会立刻关闭（隐藏），不依赖 `window.electron.ipcRenderer` 的存在
 - [x] `preload` 暴露的 `window.api.closeSettingsWindow()` 可用且通过 IPC 正确触发主进程隐藏窗口
 - [x] 成功保存时有“设置已保存”提示。在纯前端无 Electron 的开发环境下（如直接访问 localhost），可降级保存到 LocalStorage 且能正常关闭。
+- [x] 在无 ipcRenderer 环境下，直接关闭界面（或切后台）时，修改的草稿值会自动丢弃并在重新显示时重置，不会有“修改被保存”的错觉。

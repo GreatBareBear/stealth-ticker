@@ -28,6 +28,9 @@
   - [x] SubTask 8.1: 在 `Settings.tsx` 中，将 `window.api.store` 的回退层实现改为使用 `localStorage` 的虚拟 Store，并去除阻止保存的错误提示。
   - [x] SubTask 8.2: 在 `Monitor.tsx` 同样增加对 `localStorage` 的兜底，保证浏览器环境也能完整测试整个数据流的存储和读取。
 
+- [x] Task 9: 修复无 ipcRenderer 环境下的伪保存问题
+  - [x] SubTask 9.1: 在 `Settings.tsx` 中，如果 `ipcRenderer` 不可用（例如浏览器环境或 preload 加载异常），增加对 `document.visibilitychange` 的监听，在 `hidden` 时清理草稿，在 `visible` 时重建组件，避免修改的配置产生被“保存”的错觉。
+
 # Task Dependencies
 - [Task 2] depends on [Task 1]
 - [Task 3] depends on [Task 2]
