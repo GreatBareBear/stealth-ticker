@@ -112,8 +112,11 @@ export class AlertService {
           const newData = this.parseResponse(text)
 
           // 1. Send data to renderer
+          console.log(`Fetched data for ${Object.keys(newData).length} stocks`);
           if (this.mainWindow && !this.mainWindow.isDestroyed()) {
             this.mainWindow.webContents.send('stock-data-updated', newData)
+          } else {
+            console.log('mainWindow is not available or destroyed');
           }
 
           // 2. Check alerts

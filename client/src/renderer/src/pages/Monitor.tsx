@@ -202,6 +202,7 @@ function Monitor(): React.JSX.Element {
 
     // Listen for stock data pushed from main process
     const handleStockData = (newData: Record<string, StockData>) => {
+      console.log('Received stock data:', newData);
       setStockData(newData)
     }
     
