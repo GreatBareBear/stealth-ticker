@@ -10,6 +10,7 @@
   - 点击“确定”：将内存中暂存的所有变更一次性 flush 写入到底层的 Electron Store 中，并发送 IPC 关闭窗口。
   - 点击“取消”或点右上角关闭（触发 `settings-closed`）：清空内存草稿，发送 IPC 关闭窗口。
   - 窗口重新打开（触发 `settings-shown`）：清空草稿，并通过更改 `React Key` 强制重置/重新挂载所有 Tabs，保证重新拉取真实的配置。
+- **企业级 IPC 封装**：避免在渲染进程直接依赖 `window.electron.ipcRenderer`（可能不存在或被安全策略裁剪），改为在 `preload` 中通过 `window.api.closeSettingsWindow()` 暴露受控的关闭能力，并由主进程统一处理隐藏窗口逻辑。
 - **优化原并发修复逻辑**：将 `AdvancedTab` 和 `DisplayTab` 之前使用的基于本地 `settingsRef` 的并发锁，升级为从拦截后的 Mock Store 获取最新值，以完美兼容多 Tab 间的合并逻辑。
 
 ## Impact
@@ -31,3 +32,7 @@ The system SHALL provide 显式地确认机制以保存设置。
 - **THEN** 所有修改被保存，并且窗口关闭。
 - **WHEN** 用户点击“取消”按钮或关闭窗口
 - **THEN** 所有修改被丢弃，并在下次打开设置时还原为原有状态。
+
+#### Scenario: IPC API 不可用时的降级
+- **WHEN** 渲染进程环境中 `window.electron` 或 `window.electron.ipcRenderer` 不存在/不可用
+- **THEN** “确定/取消”仍能通过 `window.api.closeSettingsWindow()` 正常关闭设置窗口，且不触发白屏或未处理异常。
