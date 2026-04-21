@@ -23,7 +23,7 @@ export class ErrorBoundary extends Component<Props, State> {
     console.error('Uncaught error:', error, errorInfo);
     // Write error to file for debugging
     try {
-      window.api.store.set('LAST_CRASH', { message: error.message, stack: error.stack, info: errorInfo });
+      window?.api?.store?.set('LAST_CRASH', { message: error.message, stack: error.stack, info: errorInfo });
     } catch (e) {}
   }
 

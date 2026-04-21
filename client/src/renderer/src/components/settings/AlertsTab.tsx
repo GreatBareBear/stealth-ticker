@@ -17,7 +17,10 @@ export function AlertsTab(): React.JSX.Element {
   useEffect(() => {
     const loadData = async (): Promise<void> => {
       try {
-        const savedAlerts = await window.api.store.get('alerts')
+        const store = window?.api?.store
+        if (!store) return
+
+        const savedAlerts = await store.get('alerts')
         if (savedAlerts && typeof savedAlerts === 'object') {
           let hasLegacyAlert = false
           const normalizedAlerts = Object.fromEntries(
@@ -31,16 +34,16 @@ export function AlertsTab(): React.JSX.Element {
           ) as Record<string, AlertConfig>
           setAlerts(normalizedAlerts)
           if (hasLegacyAlert) {
-            await window.api.store.set('alerts', normalizedAlerts)
+            await store.set('alerts', normalizedAlerts)
           }
         }
 
-        const savedAlertsGlobalPaused = await window.api.store.get('alertsGlobalPaused')
+        const savedAlertsGlobalPaused = await store.get('alertsGlobalPaused')
         if (typeof savedAlertsGlobalPaused === 'boolean') {
           setAlertsGlobalPaused(savedAlertsGlobalPaused)
         }
 
-        const savedStocks = await window.api.store.get('stocks')
+        const savedStocks = await store.get('stocks')
         if (savedStocks && Array.isArray(savedStocks)) {
           setStocks(savedStocks)
         }
@@ -56,12 +59,12 @@ export function AlertsTab(): React.JSX.Element {
 
   const saveAlerts = async (newAlerts: Record<string, AlertConfig>): Promise<void> => {
     setAlerts(newAlerts)
-    await window.api.store.set('alerts', newAlerts)
+    await window?.api?.store?.set('alerts', newAlerts)
   }
 
   const saveAlertsGlobalPaused = async (paused: boolean): Promise<void> => {
     setAlertsGlobalPaused(paused)
-    await window.api.store.set('alertsGlobalPaused', paused)
+    await window?.api?.store?.set('alertsGlobalPaused', paused)
   }
 
   const openAlertModal = (record: Stock): void => {
