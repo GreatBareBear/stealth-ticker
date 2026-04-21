@@ -51,7 +51,8 @@ const DEFAULT_SETTINGS: Settings = {
 const DEFAULT_STOCKS: Stock[] = [
   { key: '1', symbol: 'sh000001', name: '上证指数', isIndex: true, visible: true },
   { key: '2', symbol: 'sz399001', name: '深证成指', isIndex: true, visible: true },
-  { key: '3', symbol: 'sz000001', name: '平安银行', isIndex: false, visible: true }
+  { key: '3', symbol: 'sz000001', name: '平安银行', isIndex: false, visible: true },
+  { key: '4', symbol: 'sh600519', name: '贵州茅台', isIndex: false, visible: false }
 ]
 
 function normalizeOpacity(value: unknown): number {
@@ -182,11 +183,11 @@ function Monitor(): React.JSX.Element {
 
   const loadConfigAndData = React.useCallback(async (): Promise<void> => {
     try {
-      const storeSettings = await window?.api?.store?.get('settings')
+      const storeSettings = await window?.api?.store?.get?.('settings')
       const currentSettings = { ...DEFAULT_SETTINGS, ...(storeSettings || {}) }
       setSettings(currentSettings)
 
-      const storeStocks = await window?.api?.store?.get('stocks')
+      const storeStocks = await window?.api?.store?.get?.('stocks')
       const currentStocks =
         Array.isArray(storeStocks) && storeStocks.length > 0 ? storeStocks : DEFAULT_STOCKS
       setStocks(currentStocks)

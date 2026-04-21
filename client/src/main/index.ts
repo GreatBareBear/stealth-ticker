@@ -444,6 +444,17 @@ app.whenReady().then(() => {
   })
 
   const initialSettings = store.get('settings') || {}
+  
+  if (!store.has('stocks')) {
+    const initialStocks = [
+      { key: '1', symbol: 'sh000001', name: '上证指数', isIndex: true, visible: true },
+      { key: '2', symbol: 'sz399001', name: '深证成指', isIndex: true, visible: true },
+      { key: '3', symbol: 'sz000001', name: '平安银行', isIndex: false, visible: true },
+      { key: '4', symbol: 'sh600519', name: '贵州茅台', isIndex: false, visible: false }
+    ]
+    store.set('stocks', initialStocks)
+  }
+
   if ((initialSettings as any).showTrayIcon !== false) {
     createTray()
   }
