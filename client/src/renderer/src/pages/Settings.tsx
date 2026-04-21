@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react'
-import { Tabs, ConfigProvider, Button, Space } from 'antd'
+import { Tabs, ConfigProvider, Button, Space, message } from 'antd'
 import { StocksTab } from '../components/settings/StocksTab'
 import { DisplayTab } from '../components/settings/DisplayTab'
 import { AdvancedTab } from '../components/settings/AdvancedTab'
@@ -61,14 +61,22 @@ function Settings(): React.JSX.Element {
   }, [])
 
   const closeSettingsWindow = (): void => {
-    if (window?.api?.closeSettingsWindow) {
-      window.api.closeSettingsWindow()
-      return
-    }
-    ;(window as any).electron?.ipcRenderer?.send?.('close-settings-window')
+    try {
+      window?.api?.closeSettingsWindow?.()
+    } catch {}
+    try {
+      ;(window as any).electron?.ipcRenderer?.send?.('close-settings-window')
+    } catch {}
+    try {
+      window.close()
+    } catch {}
   }
 
   const handleConfirm = async () => {
+    if (!window?.api?.store) {
+      message.error('设置保存失败：应用接口未就绪，请重启应用后重试')
+      return
+    }
     try {
       for (const key of Array.from(draftState.current.deleted)) {
         await originalStore.delete(key)
@@ -78,9 +86,11 @@ function Settings(): React.JSX.Element {
       }
       draftState.current.drafts = {}
       draftState.current.deleted.clear()
+      message.success('设置已保存')
       closeSettingsWindow()
     } catch (error) {
       console.error('Failed to save settings', error)
+      message.error('设置保存失败，请稍后重试')
     }
   }
 

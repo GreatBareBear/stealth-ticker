@@ -19,6 +19,11 @@
   - [x] SubTask 6.3: 若项目存在 `global.d.ts`/`env.d.ts` 等类型声明文件，为 `window.api.closeSettingsWindow` 增加 TS 类型定义
   - [ ] SubTask 6.4: 验证点击“确定/取消”后设置窗口会隐藏关闭（不销毁），再次打开状态符合 Spec（确定保存、取消丢弃）
 
+- [x] Task 7: 加固“关闭/保存”体验与可观测性
+  - [x] SubTask 7.1: 在 `Settings.tsx` 中为保存成功/失败提供用户可见反馈（message）
+  - [x] SubTask 7.2: 为关闭行为增加多重兜底（`window.api.closeSettingsWindow` → `ipcRenderer.send` → `window.close()`）
+  - [x] SubTask 7.3: 运行 `npm run typecheck:web` 与 `npm run typecheck:node` 均通过
+
 # Task Dependencies
 - [Task 2] depends on [Task 1]
 - [Task 3] depends on [Task 2]
