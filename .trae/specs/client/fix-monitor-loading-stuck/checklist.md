@@ -1,0 +1,3 @@
+- [x] 主程序在 `electron-store` 无 `stocks` 时能写入预设的 4 只股票
+- [x] 行情界面 `Monitor.tsx` 能够收到主进程推送的数据并不再卡在 Loading... 状态
+- [x] `Monitor.tsx` 的初始 `DEFAULT_STOCKS` 和 `StocksTab` 的初始股票数量匹配
