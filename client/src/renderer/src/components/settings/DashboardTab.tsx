@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react'
 import { Form, Segmented, Typography, message, Spin, Tag, Divider } from 'antd'
 
@@ -28,12 +29,11 @@ const DEFAULT_CONFIG: DashboardConfig = {
   showTopIndex: true
 }
 
-import { useStore } from '../../StoreContext'
 
-export function DashboardTab(): React.JSX.Element {
+export function DashboardTab({ store = window?.api?.store || { get: async () => null, set: async () => {}, delete: async () => {} } }: { store?: any }): React.JSX.Element {
   const [loading, setLoading] = useState(true)
   const [config, setConfig] = useState<DashboardConfig>(DEFAULT_CONFIG)
-  const store = useStore()
+  
 
   useEffect(() => {
     loadConfig()

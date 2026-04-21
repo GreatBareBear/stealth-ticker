@@ -1,3 +1,4 @@
+
 import React, { useEffect, useRef, useState } from 'react'
 import {
   Button,
@@ -15,13 +16,12 @@ import {
 
 const { Title, Text } = Typography
 
-import { useStore } from '../../StoreContext'
 
-export function DisplayTab(): React.JSX.Element {
+export function DisplayTab({ store = window?.api?.store || { get: async () => null, set: async () => {}, delete: async () => {} } }: { store?: any }): React.JSX.Element {
   const [form] = Form.useForm()
   const [loading, setLoading] = useState(true)
   const lastSavePromise = useRef<Promise<void>>(Promise.resolve())
-  const store = useStore()
+  
 
   useEffect(() => {
     const loadSettings = async () => {

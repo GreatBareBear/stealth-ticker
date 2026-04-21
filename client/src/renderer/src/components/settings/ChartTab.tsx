@@ -1,14 +1,14 @@
+
 import React, { useEffect, useState } from 'react'
 import { Form, Select, Typography, Spin } from 'antd'
 
 const { Title } = Typography
 
-import { useStore } from '../../StoreContext'
 
-export function ChartTab(): React.JSX.Element {
+export function ChartTab({ store = window?.api?.store || { get: async () => null, set: async () => {}, delete: async () => {} } }: { store?: any }): React.JSX.Element {
   const [form] = Form.useForm()
   const [loading, setLoading] = useState(true)
-  const store = useStore()
+  
 
   useEffect(() => {
     const loadSettings = async () => {

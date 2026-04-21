@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react'
 import { Table, Button, Popconfirm, Switch, message, Select, Spin, Modal, Form, Radio, InputNumber, Input, Space, Tooltip, Divider, Badge } from 'antd'
 import { PlusOutlined, DeleteOutlined, DragOutlined, BellOutlined, BellFilled, ClockCircleOutlined } from '@ant-design/icons'
@@ -134,10 +135,9 @@ function formatRemaining(ms: number): string {
   return `${m}分钟${s}秒`
 }
 
-import { useStore } from '../../StoreContext'
 
-export function StocksTab(): React.JSX.Element {
-  const store = useStore()
+export function StocksTab({ store = window?.api?.store || { get: async () => null, set: async () => {}, delete: async () => {} } }: { store?: any }): React.JSX.Element {
+  
   const [stocks, setStocks] = useState<Stock[]>([])
   const [loading, setLoading] = useState<boolean>(true)
 

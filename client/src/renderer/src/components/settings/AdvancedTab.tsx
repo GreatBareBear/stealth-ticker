@@ -1,3 +1,4 @@
+
 import React, { useEffect, useRef, useState } from 'react'
 import {
   Collapse,
@@ -18,13 +19,12 @@ import {
 
 const { Text } = Typography
 
-import { useStore } from '../../StoreContext'
 
-export function AdvancedTab(): React.JSX.Element {
+export function AdvancedTab({ store = window?.api?.store || { get: async () => null, set: async () => {}, delete: async () => {} } }: { store?: any }): React.JSX.Element {
   const [form] = Form.useForm()
   const [loading, setLoading] = useState(true)
   const lastSavePromise = useRef<Promise<void>>(Promise.resolve())
-  const store = useStore()
+  
 
   useEffect(() => {
     const loadSettings = async (): Promise<void> => {
