@@ -60,6 +60,14 @@ function Settings(): React.JSX.Element {
     }
   }, [])
 
+  const closeSettingsWindow = (): void => {
+    if (window?.api?.closeSettingsWindow) {
+      window.api.closeSettingsWindow()
+      return
+    }
+    ;(window as any).electron?.ipcRenderer?.send?.('close-settings-window')
+  }
+
   const handleConfirm = async () => {
     try {
       for (const key of Array.from(draftState.current.deleted)) {
@@ -70,7 +78,7 @@ function Settings(): React.JSX.Element {
       }
       draftState.current.drafts = {}
       draftState.current.deleted.clear()
-      ;(window as any).electron?.ipcRenderer?.send('close-settings-window')
+      closeSettingsWindow()
     } catch (error) {
       console.error('Failed to save settings', error)
     }
@@ -79,7 +87,7 @@ function Settings(): React.JSX.Element {
   const handleCancel = () => {
     draftState.current.drafts = {}
     draftState.current.deleted.clear()
-    ;(window as any).electron?.ipcRenderer?.send('close-settings-window')
+    closeSettingsWindow()
   }
 
   const items = [

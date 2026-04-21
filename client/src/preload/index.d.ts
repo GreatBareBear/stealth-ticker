@@ -9,6 +9,7 @@ declare global {
         set: (key: string, value: any) => Promise<void>
         delete: (key: string) => Promise<void>
       }
+      closeSettingsWindow: () => void
     }
   }
 }

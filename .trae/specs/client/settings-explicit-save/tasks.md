@@ -13,6 +13,12 @@
   - [x] 弃用全局 StoreContext，改为使用属性传递 (Props Injection) 将 `proxyStore` 直接传递给各个子 Tab。
   - [x] 增强容错：为所有 store 访问添加安全的回退逻辑 `window?.api?.store || { get: ... }`，防止初始化时因对象不存在导致的空指针崩溃。
 
+- [ ] Task 6: 修复“确定/取消不关闭窗口”的 IPC 调用链
+  - [x] SubTask 6.1: 在 `client/src/preload/index.ts` 的 `api` 中新增 `closeSettingsWindow(): void`，内部 `ipcRenderer.send('close-settings-window')`
+  - [x] SubTask 6.2: 在 `client/src/renderer/src/pages/Settings.tsx` 中改为调用 `window.api.closeSettingsWindow()`（并保留兼容性 fallback）
+  - [x] SubTask 6.3: 若项目存在 `global.d.ts`/`env.d.ts` 等类型声明文件，为 `window.api.closeSettingsWindow` 增加 TS 类型定义
+  - [ ] SubTask 6.4: 验证点击“确定/取消”后设置窗口会隐藏关闭（不销毁），再次打开状态符合 Spec（确定保存、取消丢弃）
+
 # Task Dependencies
 - [Task 2] depends on [Task 1]
 - [Task 3] depends on [Task 2]
