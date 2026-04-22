@@ -1,5 +1,6 @@
 import { BrowserWindow, Tray, shell, Notification } from 'electron'
 import { net } from 'electron'
+import * as iconv from 'iconv-lite'
 
 interface AlertConfig {
   type: 'price' | 'percent'
@@ -90,8 +91,14 @@ export class AlertService {
         return
       }
 
-      const symbols = visibleStocks.map((s) => encodeURIComponent(s.symbol.toLowerCase().trim())).join(',')
-      const url = `https://qt.gtimg.cn/q=${symbols}`
+      const symbols = visibleStocks.map((s) => {
+        let sym = s.symbol.toLowerCase().trim()
+        if (/^\d{6}$/.test(sym)) {
+          sym = (sym.startsWith('6') ? 'sh' : 'sz') + sym
+        }
+        return encodeURIComponent(sym)
+      }).join(',')
+      const url = `http://qt.gtimg.cn/q=${symbols}`
 
       const request = net.request(url)
       
@@ -108,16 +115,10 @@ export class AlertService {
         response.on('end', () => {
           clearTimeout(reqTimeout)
           try {
-            let text = ''
-            try {
-              const decoder = new TextDecoder('gbk')
-              text = decoder.decode(data)
-            } catch (e) {
-              text = data.toString('utf8')
-            }
+            const text = iconv.decode(data, 'gbk')
             const newData = this.parseResponse(text)
-            
-            // 1. Send data to renderer
+
+            // 1. Send data to renderer first, to ensure UI gets it even if alerts fail
             if (this.mainWindow && !this.mainWindow.isDestroyed()) {
               this.mainWindow.webContents.send('stock-data-updated', newData)
             }
