@@ -48,13 +48,6 @@ const DEFAULT_SETTINGS: Settings = {
   enableContextMenu: true
 }
 
-const DEFAULT_STOCKS: Stock[] = [
-  { key: '1', symbol: 'sh000001', name: '上证指数', isIndex: true, visible: true },
-  { key: '2', symbol: 'sz399001', name: '深证成指', isIndex: true, visible: true },
-  { key: '3', symbol: 'sz000001', name: '平安银行', isIndex: false, visible: true },
-  { key: '4', symbol: 'sh600519', name: '贵州茅台', isIndex: false, visible: false }
-]
-
 function normalizeOpacity(value: unknown): number {
   const num = typeof value === 'number' ? value : Number(value)
   if (!Number.isFinite(num)) return 80
@@ -200,8 +193,7 @@ function Monitor(): React.JSX.Element {
       setSettings(currentSettings)
 
       const storeStocks = await getStore('stocks')
-      const currentStocks =
-        Array.isArray(storeStocks) && storeStocks.length > 0 ? storeStocks : DEFAULT_STOCKS
+      const currentStocks = Array.isArray(storeStocks) ? storeStocks : []
       setStocks(currentStocks)
     } catch (error) {
       console.error('Failed to load initial config', error)
@@ -327,7 +319,7 @@ function Monitor(): React.JSX.Element {
         {stocks
           .filter((s) => s.visible)
           .map((stock) => {
-            const data = stockData[stock.symbol]
+            const data = stockData[stock.symbol] || stockData[stock.symbol.toLowerCase()] || stockData[stock.symbol.toUpperCase()]
             if (!data) {
               return (
                 <div key={stock.key} style={{ display: 'flex', padding: '2px 0' }}>
