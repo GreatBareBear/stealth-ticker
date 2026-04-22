@@ -92,19 +92,13 @@ export class AlertService {
       }
 
       const symbols = visibleStocks.map((s) => {
-        let sym = s.symbol.trim()
+        let sym = s.symbol.trim().toLowerCase()
         if (/^\d{6}$/.test(sym)) {
           sym = (sym.startsWith('6') ? 'sh' : 'sz') + sym
         }
-        const lowerSym = sym.toLowerCase()
-        if (lowerSym.startsWith('us')) {
-          sym = 'us' + sym.slice(2).toUpperCase()
-        } else if (lowerSym.startsWith('hk') || lowerSym.startsWith('sh') || lowerSym.startsWith('sz') || lowerSym.startsWith('bj')) {
-          sym = lowerSym
-        }
         return encodeURIComponent(sym)
       }).join(',')
-      const url = `http://qt.gtimg.cn/q=${symbols}`
+      const url = `https://qt.gtimg.cn/q=${symbols}`
 
       const request = net.request(url)
       

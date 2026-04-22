@@ -1,0 +1,5 @@
+- [x] 在 `alertService.ts` 中的轮询 URL 使用了 `https://qt.gtimg.cn/q=${symbols}`。
+- [x] 无论市场是什么（A股、港股或美股），最终用于请求 API 的 `symbols` 列表全是小写（如 `sh600519`, `usaapl`）。
+- [x] 在设置界面的搜索框中，美股的代码会被格式化为全小写保存。
+- [x] 运行 `npm run typecheck:web` 和 `npm run typecheck:node` 无任何错误。
+- [x] 添加股票后（例如 `sh600519`），监控面板能成功拉取数据，不再卡在 "Loading..." 状态。
