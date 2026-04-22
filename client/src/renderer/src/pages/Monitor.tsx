@@ -319,7 +319,7 @@ function Monitor(): React.JSX.Element {
         {stocks
           .filter((s) => s.visible)
           .map((stock) => {
-            const data = stockData[stock.symbol] || stockData[stock.symbol.toLowerCase()] || stockData[stock.symbol.toUpperCase()]
+            const cleanSymbol = stock.symbol.trim(); const data = stockData[cleanSymbol] || stockData[cleanSymbol.toLowerCase()] || stockData[cleanSymbol.toUpperCase()]
             if (!data) {
               return (
                 <div key={stock.key} style={{ display: 'flex', padding: '2px 0' }}>
