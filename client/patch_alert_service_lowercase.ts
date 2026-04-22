@@ -16,7 +16,7 @@ const targetUrl = `const symbols = visibleStocks.map((s) => {
         }
         return encodeURIComponent(sym)
       }).join(',')
-      const url = \`http://qt.gtimg.cn/q=\${symbols}\``;
+      const url = \`https://qt.gtimg.cn/q=\${symbols}\``;
 
 const replaceUrl = `const symbols = visibleStocks.map((s) => {
         let sym = s.symbol.trim().toLowerCase()

@@ -22,7 +22,7 @@ const newBlock = `try {
 
 content = content.replace(oldBlock, newBlock);
 
-content = content.replace(/https:\/\/qt\.gtimg\.cn/g, "http://qt.gtimg.cn");
+content = content.replace(/http:\/\/qt\.gtimg\.cn/g, "https://qt.gtimg.cn");
 
 content = content.replace(
   "const symbols = visibleStocks.map((s) => encodeURIComponent(s.symbol.toLowerCase().trim())).join(',')",

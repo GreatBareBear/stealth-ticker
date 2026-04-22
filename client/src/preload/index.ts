@@ -16,6 +16,12 @@ const api = {
   offStockDataUpdated: () => {
     ipcRenderer.removeAllListeners('stock-data-updated')
   },
+  onStockPollStatus: (callback: (payload: Record<string, any>) => void) => {
+    ipcRenderer.on('stock-poll-status', (_event, payload) => callback(payload))
+  },
+  offStockPollStatus: () => {
+    ipcRenderer.removeAllListeners('stock-poll-status')
+  },
   onConfigUpdated: (callback: (key: string) => void) => {
     ipcRenderer.on('config-updated', (_event, key) => callback(key))
   },

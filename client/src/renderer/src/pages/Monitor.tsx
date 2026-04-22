@@ -58,6 +58,7 @@ function Monitor(): React.JSX.Element {
   const [stocks, setStocks] = useState<Stock[]>([])
   const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS)
   const [stockData, setStockData] = useState<Record<string, StockData>>({})
+  const [pollStatus, setPollStatus] = useState<Record<string, any> | null>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const [isDragging, setIsDragging] = useState(false)
   const [isLocked, setIsLocked] = useState(false)
@@ -212,6 +213,12 @@ function Monitor(): React.JSX.Element {
     
     window?.api?.onStockDataUpdated?.(handleStockData)
 
+    const handlePollStatus = (payload: Record<string, any>) => {
+      setPollStatus(payload)
+    }
+
+    window?.api?.onStockPollStatus?.(handlePollStatus)
+
     // Listen for configuration changes
     const handleConfigUpdated = (key: string) => {
       if (key === 'settings' || key === 'stocks') {
@@ -230,6 +237,7 @@ function Monitor(): React.JSX.Element {
 
     return () => {
       window?.api?.offStockDataUpdated?.()
+      window?.api?.offStockPollStatus?.()
       window?.api?.offConfigUpdated?.()
       window.removeEventListener('storage', handleStorageChange)
     }
@@ -285,6 +293,7 @@ function Monitor(): React.JSX.Element {
 
   const bgColor = getBackgroundColor()
   const defaultTextColor = settings.theme ? '#fff' : '#000'
+  const lastSuccessText = pollStatus?.lastSuccessAt ? new Date(pollStatus.lastSuccessAt).toLocaleTimeString() : ''
 
   return (
     <div
@@ -321,9 +330,15 @@ function Monitor(): React.JSX.Element {
           .map((stock) => {
             const cleanSymbol = stock.symbol.trim(); const data = stockData[cleanSymbol] || stockData[cleanSymbol.toLowerCase()] || stockData[cleanSymbol.toUpperCase()]
             if (!data) {
+              const phase = pollStatus?.phase
+              const error = pollStatus?.error
+              const statusText =
+                phase === 'error' && error ? `Error: ${error}` : 'Loading...'
               return (
                 <div key={stock.key} style={{ display: 'flex', padding: '2px 0' }}>
-                  <span>{stock.name} - Loading...</span>
+                  <span>
+                    {stock.name} - {statusText}{lastSuccessText ? ` (last ok ${lastSuccessText})` : ''}
+                  </span>
                 </div>
               )
             }
