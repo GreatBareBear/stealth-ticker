@@ -97,6 +97,9 @@ export class AlertService {
         if (/^\d{6}$/.test(sym)) {
           sym = (sym.startsWith('6') ? 'sh' : 'sz') + sym
         }
+        if (sym.startsWith('us')) {
+          sym = 'us' + sym.slice(2).toUpperCase()
+        }
         return encodeURIComponent(sym)
       }).join(',')
       const url = `https://qt.gtimg.cn/q=${symbols}`
@@ -140,6 +143,21 @@ export class AlertService {
           try {
             const text = iconv.decode(data, 'gbk')
             const newData = this.parseResponse(text)
+
+            // Mark invalid symbols that yielded no data
+            visibleStocks.forEach(stock => {
+              const cleanSymbol = stock.symbol.trim()
+              const found = newData[cleanSymbol] || newData[cleanSymbol.toLowerCase()] || newData[cleanSymbol.toUpperCase()]
+              if (!found) {
+                const stockInfo = {
+                  symbol: cleanSymbol,
+                  error: 'Not Found'
+                }
+                newData[cleanSymbol] = stockInfo
+                newData[cleanSymbol.toLowerCase()] = stockInfo
+                newData[cleanSymbol.toUpperCase()] = stockInfo
+              }
+            })
 
             // 1. Send data to renderer first, to ensure UI gets it even if alerts fail
             if (this.mainWindow && !this.mainWindow.isDestroyed()) {

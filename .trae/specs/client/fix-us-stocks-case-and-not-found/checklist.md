@@ -1,0 +1,4 @@
+- [x] `alertService.ts` 中的 `poll` 方法能正确将美股格式化为 `us` + 大写（例如 `usaapl` -> `usAAPL`），同时保留 A股/港股的小写。
+- [x] 若请求了某个不存在的股票（例如拼写错误），`alertService.ts` 的 `newData` 会为其插入一条 `{ error: 'Not Found' }` 记录。
+- [x] `Monitor.tsx` 接收到包含 `error: 'Not Found'` 的股票数据时，会在界面上明确显示红色的 "Not Found"（或其他错误提示），而不是 "Loading..."。
+- [x] `npm run typecheck:web` 和 `npm run typecheck:node` 均无报错。
