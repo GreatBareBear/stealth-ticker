@@ -90,7 +90,7 @@ export class AlertService {
         return
       }
 
-      const symbols = visibleStocks.map((s) => s.symbol.toLowerCase()).join(',')
+      const symbols = visibleStocks.map((s) => encodeURIComponent(s.symbol.toLowerCase().trim())).join(',')
       const url = `https://qt.gtimg.cn/q=${symbols}`
 
       const request = net.request(url)
@@ -107,21 +107,32 @@ export class AlertService {
         })
         response.on('end', () => {
           clearTimeout(reqTimeout)
-          const decoder = new TextDecoder('gbk')
-          const text = decoder.decode(data)
-          const newData = this.parseResponse(text)
+          try {
+            let text = ''
+            try {
+              const decoder = new TextDecoder('gbk')
+              text = decoder.decode(data)
+            } catch (e) {
+              text = data.toString('utf8')
+            }
+            const newData = this.parseResponse(text)
+            
+            // 1. Send data to renderer
+            if (this.mainWindow && !this.mainWindow.isDestroyed()) {
+              this.mainWindow.webContents.send('stock-data-updated', newData)
+            }
 
-          // 1. Send data to renderer
-          if (this.mainWindow && !this.mainWindow.isDestroyed()) {
-            this.mainWindow.webContents.send('stock-data-updated', newData)
+            // 2. Check alerts
+            this.checkAlerts(newData, stocks)
+
+            // Reset failures on success
+            this.consecutiveFailures = 0
+          } catch (err) {
+            console.error('Failed to parse response:', err)
+            this.consecutiveFailures++
+          } finally {
+            this.scheduleNextPoll()
           }
-
-          // 2. Check alerts
-          this.checkAlerts(newData, stocks)
-          
-          // Reset failures on success
-          this.consecutiveFailures = 0
-          this.scheduleNextPoll()
         })
       })
       
@@ -146,23 +157,30 @@ export class AlertService {
     lines.forEach((line) => {
       line = line.trim()
       if (!line) return
-      const match = line.match(/^v_(.*?)="(.*)";$/)
+      const match = line.match(/^v_(.*?)="(.*)";?$/)
       if (match) {
         const fullSymbol = match[1]
         const parts = match[2].split('~')
-        if (parts.length > 34) {
+        if (parts.length > 10) {
           const stockInfo = {
             symbol: fullSymbol,
             name: parts[1],
             price: parts[3],
-            changeAmt: parts[31],
-            changePct: parts[32],
-            high: parts[33],
-            low: parts[34]
+            changeAmt: parts[31] || '0',
+            changePct: parts[32] || '0',
+            high: parts[33] || '0',
+            low: parts[34] || '0'
           }
           newData[fullSymbol] = stockInfo
           newData[fullSymbol.toLowerCase()] = stockInfo
           newData[fullSymbol.toUpperCase()] = stockInfo
+          
+          const codeOnly = parts[2]
+          if (codeOnly) {
+            newData[codeOnly] = stockInfo
+            newData[codeOnly.toLowerCase()] = stockInfo
+            newData[codeOnly.toUpperCase()] = stockInfo
+          }
         }
       }
     })
@@ -209,7 +227,7 @@ export class AlertService {
     const globalAlerts: AlertConfig[] = this.store.get('alerts') || []
 
     for (const stock of stocks) {
-      const data = newData[stock.symbol] || newData[stock.symbol.toLowerCase()] || newData[stock.symbol.toUpperCase()]
+      const cleanSymbol = stock.symbol.trim(); const data = newData[cleanSymbol] || newData[cleanSymbol.toLowerCase()] || newData[cleanSymbol.toUpperCase()]
       if (!data) continue
 
       const price = parseFloat(data.price)
