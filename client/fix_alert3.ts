@@ -32,7 +32,7 @@ content = content.replace(/response\.on\('end', \(\) => \{[\s\S]*?this\.schedule
           }
         })`);
 
-content = content.replace(/https:\/\/qt\.gtimg\.cn/g, "http://qt.gtimg.cn");
+content = content.replace(/http:\/\/qt\.gtimg\.cn/g, "https://qt.gtimg.cn");
 
 const targetUrl = "const symbols = visibleStocks.map((s) => encodeURIComponent(s.symbol.toLowerCase().trim())).join(',')";
 const replaceUrl = `const symbols = visibleStocks.map((s) => {

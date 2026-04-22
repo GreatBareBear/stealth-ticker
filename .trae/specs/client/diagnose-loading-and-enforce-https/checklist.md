@@ -1,0 +1,5 @@
+- [x] Monitor 在无数据时不再只显示 “Loading...”，而是显示可诊断状态（正在请求/最近失败原因/最近成功时间）。
+- [x] 主进程每次轮询结束（成功或失败）都会向渲染层推送 `stock-poll-status`，并能在 UI 中观察到变化。
+- [x] 断网或接口不可达时，UI 能显示网络错误原因，而非永久 Loading。
+- [x] 代码库中不存在外部域名的 `http://` 引用（允许 localhost/127.0.0.1）。
+- [x] `npm run typecheck:web` 与 `npm run typecheck:node` 通过。

@@ -30,6 +30,7 @@ export class AlertService {
   private lastTriggeredAt: Map<string, number> = new Map()
   private triggeredKeys: Set<string> = new Set()
   private consecutiveFailures: number = 0
+  private lastSuccessAt: number | null = null
 
   constructor(store: any, mainWindow: BrowserWindow | null, tray: Tray | null) {
     this.store = store
@@ -100,11 +101,33 @@ export class AlertService {
       }).join(',')
       const url = `https://qt.gtimg.cn/q=${symbols}`
 
+      if (this.mainWindow && !this.mainWindow.isDestroyed()) {
+        this.mainWindow.webContents.send('stock-poll-status', {
+          phase: 'start',
+          ts: Date.now(),
+          url,
+          consecutiveFailures: this.consecutiveFailures,
+          lastSuccessAt: this.lastSuccessAt
+        })
+      }
+
       const request = net.request(url)
       
       // Setup timeout (e.g., 5 seconds)
+      let timeoutFired = false
       const reqTimeout = setTimeout(() => {
+        timeoutFired = true
         request.abort()
+        if (this.mainWindow && !this.mainWindow.isDestroyed()) {
+          this.mainWindow.webContents.send('stock-poll-status', {
+            phase: 'error',
+            ts: Date.now(),
+            url,
+            error: 'timeout',
+            consecutiveFailures: this.consecutiveFailures,
+            lastSuccessAt: this.lastSuccessAt
+          })
+        }
       }, 5000)
 
       request.on('response', (response) => {
@@ -128,9 +151,31 @@ export class AlertService {
 
             // Reset failures on success
             this.consecutiveFailures = 0
+            this.lastSuccessAt = Date.now()
+
+            if (this.mainWindow && !this.mainWindow.isDestroyed()) {
+              this.mainWindow.webContents.send('stock-poll-status', {
+                phase: 'success',
+                ts: Date.now(),
+                url,
+                symbolCount: Object.keys(newData).length,
+                consecutiveFailures: this.consecutiveFailures,
+                lastSuccessAt: this.lastSuccessAt
+              })
+            }
           } catch (err) {
             console.error('Failed to parse response:', err)
             this.consecutiveFailures++
+            if (this.mainWindow && !this.mainWindow.isDestroyed()) {
+              this.mainWindow.webContents.send('stock-poll-status', {
+                phase: 'error',
+                ts: Date.now(),
+                url,
+                error: String(err),
+                consecutiveFailures: this.consecutiveFailures,
+                lastSuccessAt: this.lastSuccessAt
+              })
+            }
           } finally {
             this.scheduleNextPoll()
           }
@@ -141,6 +186,16 @@ export class AlertService {
         clearTimeout(reqTimeout)
         console.error('Fetch stock data failed in main process:', err)
         this.consecutiveFailures++
+        if (!timeoutFired && this.mainWindow && !this.mainWindow.isDestroyed()) {
+          this.mainWindow.webContents.send('stock-poll-status', {
+            phase: 'error',
+            ts: Date.now(),
+            url,
+            error: String(err),
+            consecutiveFailures: this.consecutiveFailures,
+            lastSuccessAt: this.lastSuccessAt
+          })
+        }
         this.scheduleNextPoll()
       })
       
@@ -148,6 +203,15 @@ export class AlertService {
     } catch (e) {
       console.error('Error in alert poll:', e)
       this.consecutiveFailures++
+      if (this.mainWindow && !this.mainWindow.isDestroyed()) {
+        this.mainWindow.webContents.send('stock-poll-status', {
+          phase: 'error',
+          ts: Date.now(),
+          error: String(e),
+          consecutiveFailures: this.consecutiveFailures,
+          lastSuccessAt: this.lastSuccessAt
+        })
+      }
       this.scheduleNextPoll()
     }
   }

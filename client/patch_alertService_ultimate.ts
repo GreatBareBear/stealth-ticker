@@ -22,7 +22,7 @@ content = content.replace(
 
 content = content.replace(
   /const url = `https:\/\/qt\.gtimg\.cn\/q=\$\{symbols\}`/,
-  "const url = `http://qt.gtimg.cn/q=${symbols}`"
+  "const url = `https://qt.gtimg.cn/q=${symbols}`"
 );
 
 // 3. Fix the decoding logic
