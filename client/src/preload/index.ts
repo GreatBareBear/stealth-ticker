@@ -15,6 +15,12 @@ const api = {
   },
   offStockDataUpdated: () => {
     ipcRenderer.removeAllListeners('stock-data-updated')
+  },
+  onConfigUpdated: (callback: (key: string) => void) => {
+    ipcRenderer.on('config-updated', (_event, key) => callback(key))
+  },
+  offConfigUpdated: () => {
+    ipcRenderer.removeAllListeners('config-updated')
   }
 }
 

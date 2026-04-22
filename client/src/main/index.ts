@@ -335,11 +335,17 @@ app.whenReady().then(() => {
     if (alertService) {
       alertService.reloadConfig()
     }
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('config-updated', key)
+    }
   })
 
   ipcMain.handle('store:delete', (_event, key) => {
     if (!isValidKey(key)) return
     store.delete(key)
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('config-updated', key)
+    }
   })
 
   ipcMain.on('show-context-menu', (event) => {
