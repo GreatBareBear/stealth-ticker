@@ -10,6 +10,11 @@ declare global {
         delete: (key: string) => Promise<void>
       }
       closeSettingsWindow: () => void
+      tempUnlock: (unlock: boolean) => void
+      onStockDataUpdated: (callback: (data: Record<string, any>) => void) => void
+      offStockDataUpdated: () => void
+      onConfigUpdated: (callback: (key: string) => void) => void
+      offConfigUpdated: () => void
     }
   }
 }

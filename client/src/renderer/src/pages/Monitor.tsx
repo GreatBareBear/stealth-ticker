@@ -214,13 +214,32 @@ function Monitor(): React.JSX.Element {
 
     // Listen for stock data pushed from main process
     const handleStockData = (newData: Record<string, StockData>) => {
+      console.log('Received stock data:', newData);
       setStockData(newData)
     }
     
     window?.api?.onStockDataUpdated?.(handleStockData)
 
+    // Listen for configuration changes
+    const handleConfigUpdated = (key: string) => {
+      if (key === 'settings' || key === 'stocks') {
+        loadConfigAndData()
+      }
+    }
+    window?.api?.onConfigUpdated?.(handleConfigUpdated)
+
+    // Fallback for browser environment using storage event
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'store_settings' || e.key === 'store_stocks') {
+        loadConfigAndData()
+      }
+    }
+    window.addEventListener('storage', handleStorageChange)
+
     return () => {
       window?.api?.offStockDataUpdated?.()
+      window?.api?.offConfigUpdated?.()
+      window.removeEventListener('storage', handleStorageChange)
     }
   }, [loadConfigAndData])
 

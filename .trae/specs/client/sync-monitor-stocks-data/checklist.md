@@ -1,0 +1,4 @@
+- [x] 修改并保存 `StocksTab` 或 `DisplayTab` 后，Monitor 行情界面会自动更新股票列表与显示参数，不再卡在 Loading
+- [x] 主进程通过 `config-updated` IPC 发送更新消息，且 Preload 成功暴露
+- [x] 在无 IPC（纯浏览器）环境下，通过监听 `storage` 也可以实现跨 Tab 的自选股配置同步
+- [x] 运行 `npm run typecheck:web` 与 `npm run typecheck:node` 均无报错
