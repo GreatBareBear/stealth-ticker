@@ -424,10 +424,10 @@ export function StocksTab({ store = window?.api?.store || { get: async () => nul
             const type = parts[4]
 
             if (exchange === 'us') {
-              code = code.split('.')[0].toUpperCase()
+              code = code.split('.')[0]
             }
 
-            const symbol = `${exchange}${code}`
+            const symbol = `${exchange}${code}`.toLowerCase()
           return {
             value: symbol,
             label: `${name} (${symbol})`,
