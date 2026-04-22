@@ -1,0 +1,4 @@
+- [x] 添加苹果（Apple）或特斯拉（Tesla）等美股时，不再显示 "Loading..."，能成功获取价格。
+- [x] 无论用户输入大小写混乱的代码（如 `usAapl`、`SH601857`），系统都能自动纠正格式，获取正确的数据。
+- [x] 后台轮询请求参数完全符合腾讯 API 各市场的严苛大小写标准。
+- [x] 运行 `npm run typecheck:web` 与 `npm run typecheck:node` 均无报错。
