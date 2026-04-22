@@ -453,11 +453,9 @@ app.whenReady().then(() => {
   
   const existingStocks = store.get('stocks')
   const shouldInitStocks = !Array.isArray(existingStocks)
-
   if (shouldInitStocks) {
     store.set('stocks', [])
   }
-
   if ((initialSettings as any).showTrayIcon !== false) {
     createTray()
   }
