@@ -90,7 +90,7 @@ export class AlertService {
         return
       }
 
-      const symbols = visibleStocks.map((s) => s.symbol).join(',')
+      const symbols = visibleStocks.map((s) => s.symbol.toLowerCase()).join(',')
       const url = `https://qt.gtimg.cn/q=${symbols}`
 
       const request = net.request(url)
@@ -151,7 +151,7 @@ export class AlertService {
         const fullSymbol = match[1]
         const parts = match[2].split('~')
         if (parts.length > 34) {
-          newData[fullSymbol] = {
+          const stockInfo = {
             symbol: fullSymbol,
             name: parts[1],
             price: parts[3],
@@ -160,6 +160,9 @@ export class AlertService {
             high: parts[33],
             low: parts[34]
           }
+          newData[fullSymbol] = stockInfo
+          newData[fullSymbol.toLowerCase()] = stockInfo
+          newData[fullSymbol.toUpperCase()] = stockInfo
         }
       }
     })
@@ -206,7 +209,7 @@ export class AlertService {
     const globalAlerts: AlertConfig[] = this.store.get('alerts') || []
 
     for (const stock of stocks) {
-      const data = newData[stock.symbol]
+      const data = newData[stock.symbol] || newData[stock.symbol.toLowerCase()] || newData[stock.symbol.toUpperCase()]
       if (!data) continue
 
       const price = parseFloat(data.price)

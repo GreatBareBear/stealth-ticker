@@ -1,28 +1,36 @@
-# Fix Monitor UI and Stock Search Spec
+# Monitor Display Fixes Spec
 
 ## Why
-1. 添加股票时的中文名称出现乱码，因为腾讯 Smartbox API 返回的字符串包含 Unicode 转义序列（如 `\u4e0a`），而代码中未对其进行解析。
-2. 调整透明度和背景颜色在行情界面不生效，因为 Electron-Vite 模板默认的 `base.css` 和 `main.css` 给 `body` 和 `#root` 设置了不透明的背景颜色、背景图片以及影响布局的 `margin`。
+用户反馈：
+1. 添加自定义股票（如大写字母的代码）后，悬浮行情窗口能显示该股票但一直卡在 "Loading..."。这是由于在向 API 请求和解析响应时，没有统一进行大小写转换与兼容，导致前端按原输入查找不到对应的行情数据。
+2. 当清空所有自选股票时，悬浮窗口并没有显示为空，而是恢复显示了 3 只默认股票。这是由于 `Monitor.tsx` 和主进程 `index.ts` 中对空数组的判断逻辑过于严格，当检测到无股票时强制加载了默认列表。
 
 ## What Changes
-- 解析 Smartbox API 返回的 Unicode 转义字符。
-- 清理 `base.css` 和 `main.css` 中默认的背景样式（包括 `background-image`、`background`、`margin-bottom` 等），确保 `body` 和 `#root` 具有透明背景。
-- 在 `Monitor.tsx` 的 `getBackgroundColor` 方法中，增加对 3 位 16 进制颜色（如 `#000`）和 8 位颜色（带透明度的 Hex）的支持，或者如果用户输入了无法解析的颜色名，确保透明度能以某种形式生效（比如通过 `rgba` 回退）。
+- **alertService.ts**:
+  - 请求时将股票代码统一转为小写。
+  - 解析 API 响应时，为 `newData` 对象生成大小写兼容的键值（如小写、大写以及原始键）。
+  - 在内部检查警报时使用兼容键查找行情数据。
+- **Monitor.tsx**:
+  - 渲染股票时，在 `stockData` 中使用大小写兼容键查找行情数据。
+  - 移除对空数组回退 `DEFAULT_STOCKS` 的逻辑，直接使用本地配置或空数组。
+  - 删除文件内的 `DEFAULT_STOCKS` 常量定义。
+- **main/index.ts**:
+  - 移除初始化阶段对于“空数组”判定并回退插入默认股票的逻辑。如果是初次启动或数据损坏，仅初始化为空数组 `[]`。
 
 ## Impact
 - Affected code:
-  - `client/src/renderer/src/components/settings/StocksTab.tsx`
-  - `client/src/renderer/src/assets/base.css`
-  - `client/src/renderer/src/assets/main.css`
-  - `client/src/renderer/src/pages/Monitor.tsx`
+  - `src/main/alertService.ts`
+  - `src/renderer/src/pages/Monitor.tsx`
+  - `src/main/index.ts`
 
 ## ADDED Requirements
-### Requirement: 股票名称 Unicode 解析
-The system SHALL decode Unicode escape sequences in the API response text before parsing the hint fields.
+### Requirement: Case-insensitive Stock Data Matching
+The system SHALL correctly match and display stock data regardless of whether the user inputs the stock symbol in uppercase or lowercase.
 
-### Requirement: 完全透明的窗体背景
-The system SHALL ensure the Electron BrowserWindow's HTML body is completely transparent so that the React application's opacity and background color settings dictate the window's visual background.
+#### Scenario: Success case
+- **WHEN** user adds a custom stock with uppercase symbol (e.g., SH600519)
+- **THEN** the monitor successfully fetches and displays the data instead of getting stuck on "Loading...".
 
 ## MODIFIED Requirements
-### Requirement: 背景颜色兼容性
-The system SHALL support 3-character hex color codes in `getBackgroundColor`.
+### Requirement: Empty Monitor When No Stocks Set
+The system SHALL display an empty monitor window if the user has not configured any stocks or has cleared their stock list, rather than reverting to a hardcoded list of default stocks.
