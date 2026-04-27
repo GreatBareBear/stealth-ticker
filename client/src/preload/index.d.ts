@@ -1,6 +1,21 @@
 import { ElectronAPI } from '@electron-toolkit/preload'
 
 declare global {
+  type StockPollPhase = 'start' | 'success' | 'error'
+
+  interface StockPollStatus {
+    phase: StockPollPhase
+    ts: number
+    url?: string
+    statusCode?: number
+    bytes?: number
+    parsedSymbols?: number
+    error?: string
+    consecutiveFailures?: number
+    lastSuccessAt?: number | null
+    lastEventAt?: number
+  }
+
   interface Window {
     electron: ElectronAPI
     api: {
@@ -13,7 +28,8 @@ declare global {
       tempUnlock: (unlock: boolean) => void
       onStockDataUpdated: (callback: (data: Record<string, any>) => void) => void
       offStockDataUpdated: () => void
-      onStockPollStatus: (callback: (payload: Record<string, any>) => void) => void
+      getStockPollStatus: () => Promise<StockPollStatus | null>
+      onStockPollStatus: (callback: (payload: StockPollStatus) => void) => void
       offStockPollStatus: () => void
       onConfigUpdated: (callback: (key: string) => void) => void
       offConfigUpdated: () => void

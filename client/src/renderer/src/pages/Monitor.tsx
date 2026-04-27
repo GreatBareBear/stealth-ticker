@@ -26,7 +26,7 @@ interface Settings {
   enableContextMenu?: boolean
 }
 
-interface StockData {
+interface StockDataOk {
   symbol: string
   name: string
   price: string
@@ -35,6 +35,14 @@ interface StockData {
   high: string
   low: string
 }
+
+interface StockDataError {
+  symbol: string
+  name?: string
+  error: string
+}
+
+type StockData = StockDataOk | StockDataError
 
 const DEFAULT_SETTINGS: Settings = {
   theme: true,
@@ -58,14 +66,17 @@ function Monitor(): React.JSX.Element {
   const [stocks, setStocks] = useState<Stock[]>([])
   const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS)
   const [stockData, setStockData] = useState<Record<string, StockData>>({})
-  const [pollStatus, setPollStatus] = useState<Record<string, any> | null>(null)
+  const [pollStatus, setPollStatus] = useState<StockPollStatus | null>(null)
+  const [nowTick, setNowTick] = useState(() => Date.now())
+  const [copyTip, setCopyTip] = useState<string>('')
+  const [mountedAt] = useState(() => Date.now())
   const containerRef = useRef<HTMLDivElement>(null)
   const [isDragging, setIsDragging] = useState(false)
   const [isLocked, setIsLocked] = useState(false)
   const dragPosRef = useRef({ x: 0, y: 0 })
 
   useEffect(() => {
-    const handleLock = (_event: any, locked: boolean) => {
+    const handleLock = (_event: unknown, locked: boolean): void => {
       setIsLocked(locked)
       if (locked) {
         setIsDragging(false)
@@ -79,7 +90,7 @@ function Monitor(): React.JSX.Element {
     }
   }, [])
 
-  const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+  const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>): void => {
     if (isLocked) return
     if (e.button === 0) {
       e.currentTarget.setPointerCapture(e.pointerId)
@@ -88,7 +99,7 @@ function Monitor(): React.JSX.Element {
     }
   }
 
-  const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+  const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>): void => {
     if (isLocked) return
     if (isDragging) {
       const deltaX = e.screenX - dragPosRef.current.x
@@ -98,7 +109,7 @@ function Monitor(): React.JSX.Element {
     }
   }
 
-  const handlePointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
+  const handlePointerUp = (e: React.PointerEvent<HTMLDivElement>): void => {
     if (isLocked) return
     if (e.button === 0) {
       e.currentTarget.releasePointerCapture(e.pointerId)
@@ -126,11 +137,16 @@ function Monitor(): React.JSX.Element {
     }
   }, [])
 
+  useEffect(() => {
+    const timer = window.setInterval(() => setNowTick(Date.now()), 1000)
+    return () => window.clearInterval(timer)
+  }, [])
+
   React.useEffect(() => {
     let isHovering = false
     let isTempUnlocked = false
 
-    const checkUnlock = (shouldUnlock: boolean) => {
+    const checkUnlock = (shouldUnlock: boolean): void => {
       const active = isHovering && shouldUnlock
       if (active !== isTempUnlocked) {
         isTempUnlocked = active
@@ -138,17 +154,17 @@ function Monitor(): React.JSX.Element {
       }
     }
 
-    const handleMouseMove = (e: MouseEvent) => {
+    const handleMouseMove = (e: MouseEvent): void => {
       isHovering = true
       checkUnlock(e.altKey)
     }
 
-    const handleMouseLeave = () => {
+    const handleMouseLeave = (): void => {
       isHovering = false
       checkUnlock(false)
     }
 
-    const handleKeyUp = (e: KeyboardEvent) => {
+    const handleKeyUp = (e: KeyboardEvent): void => {
       if (e.key === 'Alt') {
         checkUnlock(false)
       }
@@ -176,7 +192,7 @@ function Monitor(): React.JSX.Element {
   }
 
   const fallbackStore = {
-    get: async (key: string) => {
+    get: async (key: string): Promise<unknown> => {
       try {
         const item = localStorage.getItem(`store_${key}`)
         return item ? JSON.parse(item) : null
@@ -202,40 +218,52 @@ function Monitor(): React.JSX.Element {
   }, [])
 
   useEffect(() => {
-    // Load config on mount
-    loadConfigAndData()
+    const initialLoadTimer = window.setTimeout(() => {
+      void loadConfigAndData()
+    }, 0)
+
+    let cancelled = false
+    window?.api
+      ?.getStockPollStatus?.()
+      ?.then((status) => {
+        if (cancelled) return
+        if (status) setPollStatus(status)
+      })
+      .catch(() => {})
 
     // Listen for stock data pushed from main process
-    const handleStockData = (newData: Record<string, StockData>) => {
+    const handleStockData = (newData: Record<string, StockData>): void => {
       console.log('Received stock data:', newData);
       setStockData(newData)
     }
     
     window?.api?.onStockDataUpdated?.(handleStockData)
 
-    const handlePollStatus = (payload: Record<string, any>) => {
+    const handlePollStatus = (payload: StockPollStatus): void => {
       setPollStatus(payload)
     }
 
     window?.api?.onStockPollStatus?.(handlePollStatus)
 
     // Listen for configuration changes
-    const handleConfigUpdated = (key: string) => {
+    const handleConfigUpdated = (key: string): void => {
       if (key === 'settings' || key === 'stocks') {
-        loadConfigAndData()
+        void loadConfigAndData()
       }
     }
     window?.api?.onConfigUpdated?.(handleConfigUpdated)
 
     // Fallback for browser environment using storage event
-    const handleStorageChange = (e: StorageEvent) => {
+    const handleStorageChange = (e: StorageEvent): void => {
       if (e.key === 'store_settings' || e.key === 'store_stocks') {
-        loadConfigAndData()
+        void loadConfigAndData()
       }
     }
     window.addEventListener('storage', handleStorageChange)
 
     return () => {
+      cancelled = true
+      window.clearTimeout(initialLoadTimer)
       window?.api?.offStockDataUpdated?.()
       window?.api?.offStockPollStatus?.()
       window?.api?.offConfigUpdated?.()
@@ -244,8 +272,8 @@ function Monitor(): React.JSX.Element {
   }, [loadConfigAndData])
 
   useEffect(() => {
-    const handleShown = () => {
-      loadConfigAndData()
+    const handleShown = (): void => {
+      void loadConfigAndData()
     }
 
     window?.electron?.ipcRenderer?.on('window-shown', handleShown)
@@ -284,7 +312,7 @@ function Monitor(): React.JSX.Element {
     return isUp ? '#ff0000' : '#00ff00'
   }
 
-  const getBackgroundColor = () => {
+  const getBackgroundColor = (): string => {
     if (settings.bgColor) {
       return settings.bgColor
     }
@@ -294,6 +322,50 @@ function Monitor(): React.JSX.Element {
   const bgColor = getBackgroundColor()
   const defaultTextColor = settings.theme ? '#fff' : '#000'
   const lastSuccessText = pollStatus?.lastSuccessAt ? new Date(pollStatus.lastSuccessAt).toLocaleTimeString() : ''
+  const pollEventTs =
+    typeof pollStatus?.lastEventAt === 'number'
+      ? pollStatus.lastEventAt
+      : typeof pollStatus?.ts === 'number'
+        ? pollStatus.ts
+        : null
+  const watchdogThresholdMs = Math.max(2 * (settings.refreshRate || DEFAULT_SETTINGS.refreshRate) * 1000, 10000)
+  const pollAgeMs = pollEventTs ? nowTick - pollEventTs : nowTick - mountedAt
+  const watchdogStale = pollAgeMs > watchdogThresholdMs
+
+  const copyDiagnostics = async (): Promise<void> => {
+    const diagnostics = [
+      `ts=${new Date().toISOString()}`,
+      `refreshRate=${settings.refreshRate}`,
+      `stocks=${JSON.stringify(stocks)}`,
+      `pollStatus=${JSON.stringify(pollStatus)}`
+    ].join('\n')
+
+    const setTip = (text: string): void => {
+      setCopyTip(text)
+      window.setTimeout(() => setCopyTip(''), 1500)
+    }
+
+    try {
+      await navigator.clipboard.writeText(diagnostics)
+      setTip('已复制')
+    } catch {
+      try {
+        const textarea = document.createElement('textarea')
+        textarea.value = diagnostics
+        textarea.style.position = 'fixed'
+        textarea.style.left = '-9999px'
+        textarea.style.top = '0'
+        document.body.appendChild(textarea)
+        textarea.focus()
+        textarea.select()
+        const ok = document.execCommand('copy')
+        document.body.removeChild(textarea)
+        setTip(ok ? '已复制' : '复制失败')
+      } catch {
+        setTip('复制失败')
+      }
+    }
+  }
 
   return (
     <div
@@ -324,16 +396,80 @@ function Monitor(): React.JSX.Element {
         } as React.CSSProperties
       }
     >
+      <div
+        style={
+          {
+            width: '100%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: '8px',
+            fontSize: '11px',
+            opacity: 0.85,
+            marginBottom: '6px',
+            whiteSpace: 'nowrap',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis'
+          } as React.CSSProperties
+        }
+      >
+        <div
+          style={
+            {
+              flex: 1,
+              minWidth: 0,
+              whiteSpace: 'nowrap',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis'
+            } as React.CSSProperties
+          }
+        >
+          {watchdogStale
+            ? 'Polling Status: Polling not running / IPC disconnected'
+            : pollStatus
+              ? `Polling Status: ${pollStatus.phase} ${Math.max(0, Math.round(pollAgeMs / 1000))}s` +
+                (typeof pollStatus.statusCode === 'number' ? ` sc=${pollStatus.statusCode}` : '') +
+                (typeof pollStatus.bytes === 'number' ? ` b=${pollStatus.bytes}` : '') +
+                (typeof pollStatus.parsedSymbols === 'number' ? ` syms=${pollStatus.parsedSymbols}` : '') +
+                (pollStatus.error ? ` err=${pollStatus.error}` : '')
+              : 'Polling Status: waiting...'}
+        </div>
+        <button
+          type="button"
+          onClick={copyDiagnostics}
+          style={
+            {
+              flex: 'none',
+              fontSize: '11px',
+              padding: '2px 6px',
+              borderRadius: '6px',
+              border: `1px solid ${settings.theme ? 'rgba(255,255,255,0.25)' : 'rgba(0,0,0,0.2)'}`,
+              background: 'transparent',
+              color: defaultTextColor,
+              opacity: 0.9,
+              cursor: 'pointer'
+            } as React.CSSProperties
+          }
+        >
+          {copyTip ? copyTip : '复制诊断'}
+        </button>
+      </div>
       <div style={{ width: '100%' } as React.CSSProperties}>
         {stocks
           .filter((s) => s.visible)
           .map((stock) => {
-            const cleanSymbol = stock.symbol.trim(); const data = stockData[cleanSymbol] || stockData[cleanSymbol.toLowerCase()] || stockData[cleanSymbol.toUpperCase()]
+            const cleanSymbol = stock.symbol.trim()
+            const data =
+              stockData[cleanSymbol] || stockData[cleanSymbol.toLowerCase()] || stockData[cleanSymbol.toUpperCase()]
             if (!data) {
               const phase = pollStatus?.phase
               const error = pollStatus?.error
               const statusText =
-                phase === 'error' && error ? `Error: ${error}` : 'Loading...'
+                watchdogStale
+                  ? 'Polling not running / IPC disconnected'
+                  : phase === 'error' && error
+                    ? `Error: ${error}`
+                    : 'Loading...'
               return (
                 <div key={stock.key} style={{ display: 'flex', padding: '2px 0' }}>
                   <span>
@@ -343,11 +479,11 @@ function Monitor(): React.JSX.Element {
               )
             }
 
-            if ((data as any).error) {
+            if ('error' in data) {
               return (
                 <div key={stock.key} style={{ display: 'flex', padding: '2px 0', color: '#ff4d4f' }}>
                   <span>
-                    {stock.name} - {(data as any).error}
+                    {stock.name} - {data.error}
                   </span>
                 </div>
               )
@@ -357,7 +493,7 @@ function Monitor(): React.JSX.Element {
             const isUp = parseFloat(data.changeAmt) > 0
             const sign = isUp ? '+' : ''
 
-            const renderSymbol = () => {
+            const renderSymbol = (): React.ReactNode => {
               const format = settings.symbolFormat
               if (format === 'none') return null
               let text = stock.symbol
@@ -368,7 +504,7 @@ function Monitor(): React.JSX.Element {
               return <span style={{ minWidth: '50px' }}>{text}</span>
             }
 
-            const renderName = () => {
+            const renderName = (): React.ReactNode => {
               const format = settings.nameFormat
               if (format === 'none') return null
               let text = stock.name
@@ -385,7 +521,7 @@ function Monitor(): React.JSX.Element {
               return <span style={{ minWidth: '80px' }}>{text}</span>
             }
 
-            const renderPrice = () => {
+            const renderPrice = (): React.ReactNode => {
               const format = settings.priceFormat
               if (format === 'none') return null
               if (format === 'priceAndChange') {
