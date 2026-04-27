@@ -323,49 +323,62 @@ function Monitor(): React.JSX.Element {
   const defaultTextColor = settings.theme ? '#fff' : '#000'
   const lastSuccessText = pollStatus?.lastSuccessAt ? new Date(pollStatus.lastSuccessAt).toLocaleTimeString() : ''
   const pollEventTs =
-    typeof pollStatus?.lastEventAt === 'number'
-      ? pollStatus.lastEventAt
-      : typeof pollStatus?.ts === 'number'
-        ? pollStatus.ts
-        : null
-  const watchdogThresholdMs = Math.max(2 * (settings.refreshRate || DEFAULT_SETTINGS.refreshRate) * 1000, 10000)
-  const pollAgeMs = pollEventTs ? nowTick - pollEventTs : nowTick - mountedAt
-  const watchdogStale = pollAgeMs > watchdogThresholdMs
+      typeof pollStatus?.lastEventAt === 'number'
+        ? pollStatus.lastEventAt
+        : typeof pollStatus?.ts === 'number'
+          ? pollStatus.ts
+          : null
 
-  const copyDiagnostics = async (): Promise<void> => {
-    const diagnostics = [
-      `ts=${new Date().toISOString()}`,
-      `refreshRate=${settings.refreshRate}`,
-      `stocks=${JSON.stringify(stocks)}`,
-      `pollStatus=${JSON.stringify(pollStatus)}`
-    ].join('\n')
+    const baseRefreshRate = settings.refreshRate || DEFAULT_SETTINGS.refreshRate || 3
+    const consecutiveFailures = pollStatus?.consecutiveFailures || 0
+    const backoffMultiplier = Math.pow(2, Math.min(consecutiveFailures, 6))
+    const expectedIntervalMs = Math.min(baseRefreshRate * backoffMultiplier, 60) * 1000
+    const watchdogThresholdMs = Math.max(expectedIntervalMs + 5000, 10000)
 
-    const setTip = (text: string): void => {
-      setCopyTip(text)
-      window.setTimeout(() => setCopyTip(''), 1500)
-    }
+    const pollAgeMs = pollEventTs ? nowTick - pollEventTs : nowTick - mountedAt
+    
+    const visibleStocks = stocks.filter((s) => s.visible)
+    const watchdogStale = visibleStocks.length > 0 && pollAgeMs > watchdogThresholdMs
 
-    try {
-      await navigator.clipboard.writeText(diagnostics)
-      setTip('已复制')
-    } catch {
+    const copyDiagnostics = async (): Promise<void> => {
+      const diagnostics = [
+        `ts=${new Date().toISOString()}`,
+        `refreshRate=${settings.refreshRate}`,
+        `stocks=${JSON.stringify(stocks)}`,
+        `pollStatus=${JSON.stringify(pollStatus)}`
+      ].join('\n')
+
+      const setTip = (text: string): void => {
+        setCopyTip(text)
+        window.setTimeout(() => setCopyTip(''), 1500)
+      }
+
       try {
-        const textarea = document.createElement('textarea')
-        textarea.value = diagnostics
-        textarea.style.position = 'fixed'
-        textarea.style.left = '-9999px'
-        textarea.style.top = '0'
-        document.body.appendChild(textarea)
-        textarea.focus()
-        textarea.select()
-        const ok = document.execCommand('copy')
-        document.body.removeChild(textarea)
-        setTip(ok ? '已复制' : '复制失败')
+        if (window?.api?.copyToClipboard) {
+          await window.api.copyToClipboard(diagnostics)
+          setTip('已复制')
+        } else {
+          await navigator.clipboard.writeText(diagnostics)
+          setTip('已复制')
+        }
       } catch {
-        setTip('复制失败')
+        try {
+          const textarea = document.createElement('textarea')
+          textarea.value = diagnostics
+          textarea.style.position = 'fixed'
+          textarea.style.left = '-9999px'
+          textarea.style.top = '0'
+          document.body.appendChild(textarea)
+          textarea.focus()
+          textarea.select()
+          const ok = document.execCommand('copy')
+          document.body.removeChild(textarea)
+          setTip(ok ? '已复制' : '复制失败')
+        } catch {
+          setTip('复制失败')
+        }
       }
     }
-  }
 
   return (
     <div
@@ -424,16 +437,18 @@ function Monitor(): React.JSX.Element {
             } as React.CSSProperties
           }
         >
-          {watchdogStale
-            ? 'Polling Status: Polling not running / IPC disconnected'
-            : pollStatus
-              ? `Polling Status: ${pollStatus.phase} ${Math.max(0, Math.round(pollAgeMs / 1000))}s` +
-                (typeof pollStatus.statusCode === 'number' ? ` sc=${pollStatus.statusCode}` : '') +
-                (typeof pollStatus.bytes === 'number' ? ` b=${pollStatus.bytes}` : '') +
-                (typeof pollStatus.parsedSymbols === 'number' ? ` syms=${pollStatus.parsedSymbols}` : '') +
-                (pollStatus.error ? ` err=${pollStatus.error}` : '')
-              : 'Polling Status: waiting...'}
-        </div>
+            {visibleStocks.length === 0 
+              ? 'Polling Status: no visible stocks'
+              : watchdogStale
+              ? 'Polling Status: Polling not running / IPC disconnected'
+              : pollStatus
+                ? `Polling Status: ${pollStatus.phase} ${Math.max(0, Math.round(pollAgeMs / 1000))}s` +
+                  (typeof pollStatus.statusCode === 'number' ? ` sc=${pollStatus.statusCode}` : '') +
+                  (typeof pollStatus.bytes === 'number' ? ` b=${pollStatus.bytes}` : '') +
+                  (typeof pollStatus.parsedSymbols === 'number' ? ` syms=${pollStatus.parsedSymbols}` : '') +
+                  (pollStatus.error ? ` err=${pollStatus.error}` : '')
+                : 'Polling Status: waiting...'}
+          </div>
         <button
           type="button"
           onClick={copyDiagnostics}

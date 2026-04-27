@@ -16,5 +16,6 @@ interface Window {
     offStockPollStatus: () => void
     onConfigUpdated: (callback: (key: string) => void) => void
     offConfigUpdated: () => void
+    copyToClipboard?: (text: string) => Promise<void>
   }
 }

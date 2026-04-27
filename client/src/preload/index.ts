@@ -29,6 +29,7 @@ const api = {
   offStockPollStatus: () => {
     ipcRenderer.removeAllListeners('stock-poll-status')
   },
+  copyToClipboard: (text: string) => ipcRenderer.invoke('copy-to-clipboard', text),
   onConfigUpdated: (callback: (key: string) => void) => {
     ipcRenderer.on('config-updated', (_event, key) => callback(key))
   },
