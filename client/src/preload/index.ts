@@ -16,6 +16,13 @@ const api = {
   offStockDataUpdated: () => {
     ipcRenderer.removeAllListeners('stock-data-updated')
   },
+  getStockPollStatus: async () => {
+    try {
+      return await ipcRenderer.invoke('get-stock-poll-status')
+    } catch {
+      return null
+    }
+  },
   onStockPollStatus: (callback: (payload: Record<string, any>) => void) => {
     ipcRenderer.on('stock-poll-status', (_event, payload) => callback(payload))
   },

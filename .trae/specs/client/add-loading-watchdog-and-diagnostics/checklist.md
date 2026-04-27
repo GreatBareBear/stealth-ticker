@@ -1,0 +1,4 @@
+- [x] Monitor 页面可看到 “Polling Status” 状态条，且会随着轮询更新（start/success/error）。
+- [x] 当超过阈值未收到任何 poll status（或 IPC 不通）时，UI 显示 watchdog 提示而不是永久 “Loading...”.
+- [x] “复制诊断信息”可用，剪贴板内容包含 stocks 配置与 latest poll status（含 statusCode/bytes）。
+- [x] `npm run typecheck:web` 与 `npm run typecheck:node` 通过。

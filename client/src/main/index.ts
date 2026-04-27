@@ -348,6 +348,10 @@ app.whenReady().then(() => {
     }
   })
 
+  ipcMain.handle('get-stock-poll-status', () => {
+    return alertService?.getLastPollStatus?.() ?? null
+  })
+
   ipcMain.on('show-context-menu', (event) => {
     const settings: any = store.get('settings') || {}
     if (settings.enableContextMenu === false) return
