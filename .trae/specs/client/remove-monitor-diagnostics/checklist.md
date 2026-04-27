@@ -1,0 +1,5 @@
+- [x] 移除 `Monitor.tsx` 页面中的“复制诊断”按钮及顶部的状态栏。
+- [x] 清除 watchdog、`pollStatus` 等所有状态变量，恢复界面默认的 `Loading...` 展示（只保留“Not Found”错误处理）。
+- [x] 移除主进程中的 `lastPollStatus`、`get-stock-poll-status` 和 `copy-to-clipboard` 的 IPC。
+- [x] 移除 `preload/index.ts` 暴露的相关属性。
+- [x] 运行 `npm run typecheck:web` 与 `npm run typecheck:node` 通过，无报错。

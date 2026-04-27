@@ -66,16 +66,10 @@ function Monitor(): React.JSX.Element {
   const [stocks, setStocks] = useState<Stock[]>([])
   const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS)
   const [stockData, setStockData] = useState<Record<string, StockData>>({})
-  const [pollStatus, setPollStatus] = useState<StockPollStatus | null>(null)
-  const [nowTick, setNowTick] = useState(() => Date.now())
-  const [copyTip, setCopyTip] = useState<string>('')
-  const [mountedAt] = useState(() => Date.now())
   const containerRef = useRef<HTMLDivElement>(null)
   const [isDragging, setIsDragging] = useState(false)
   const [isLocked, setIsLocked] = useState(false)
   const dragPosRef = useRef({ x: 0, y: 0 })
-  const ipcAvailable = Boolean(window?.api)
-  const storeAvailable = Boolean(window?.api?.store?.get)
 
   useEffect(() => {
     const handleLock = (_event: unknown, locked: boolean): void => {
@@ -137,11 +131,6 @@ function Monitor(): React.JSX.Element {
     return () => {
       observer.disconnect()
     }
-  }, [])
-
-  useEffect(() => {
-    const timer = window.setInterval(() => setNowTick(Date.now()), 1000)
-    return () => window.clearInterval(timer)
   }, [])
 
   React.useEffect(() => {
@@ -224,26 +213,11 @@ function Monitor(): React.JSX.Element {
       void loadConfigAndData()
     }, 0)
 
-    let cancelled = false
-    window?.api
-      ?.getStockPollStatus?.()
-      ?.then((status) => {
-        if (cancelled) return
-        if (status) setPollStatus(status)
-      })
-      .catch(() => {})
-
     const handleStockData = (newData: Record<string, StockData>): void => {
       setStockData(newData)
     }
 
     window?.api?.onStockDataUpdated?.(handleStockData)
-
-    const handlePollStatus = (payload: StockPollStatus): void => {
-      setPollStatus(payload)
-    }
-
-    window?.api?.onStockPollStatus?.(handlePollStatus)
 
     const handleConfigUpdated = (key: string): void => {
       if (key === 'settings' || key === 'stocks') {
@@ -260,10 +234,8 @@ function Monitor(): React.JSX.Element {
     window.addEventListener('storage', handleStorageChange)
 
     return () => {
-      cancelled = true
       window.clearTimeout(initialLoadTimer)
       window?.api?.offStockDataUpdated?.()
-      window?.api?.offStockPollStatus?.()
       window?.api?.offConfigUpdated?.()
       window.removeEventListener('storage', handleStorageChange)
     }
@@ -319,84 +291,6 @@ function Monitor(): React.JSX.Element {
 
   const bgColor = getBackgroundColor()
   const defaultTextColor = settings.theme ? '#fff' : '#000'
-  const lastSuccessText = pollStatus?.lastSuccessAt ? new Date(pollStatus.lastSuccessAt).toLocaleTimeString() : ''
-  const pollEventTs =
-    typeof pollStatus?.lastEventAt === 'number'
-      ? pollStatus.lastEventAt
-      : typeof pollStatus?.ts === 'number'
-        ? pollStatus.ts
-        : null
-
-  const baseRefreshRate = settings.refreshRate || DEFAULT_SETTINGS.refreshRate || 3
-  const consecutiveFailures = pollStatus?.consecutiveFailures || 0
-  const backoffMultiplier = Math.pow(2, Math.min(consecutiveFailures, 6))
-  const expectedIntervalMs = Math.min(baseRefreshRate * backoffMultiplier, 60) * 1000
-  const watchdogThresholdMs = Math.max(expectedIntervalMs + 5000, 10000)
-  const pollAgeMs = pollEventTs ? nowTick - pollEventTs : nowTick - mountedAt
-
-  const visibleStocks = stocks.filter((s) => s.visible)
-  const watchdogEligible = ipcAvailable && visibleStocks.length > 0
-  const watchdogStale = watchdogEligible && pollAgeMs > watchdogThresholdMs
-  const webMode = !ipcAvailable || !storeAvailable
-  const hasPollStatus = Boolean(pollStatus)
-
-  const statusBarText = webMode
-    ? 'IPC unavailable (web mode)'
-    : visibleStocks.length === 0
-      ? 'Polling Status: no visible stocks'
-      : watchdogStale
-        ? 'Polling Status: Polling not running / IPC disconnected'
-        : pollStatus
-          ? `Polling Status: ${pollStatus.phase} ${Math.max(0, Math.round(pollAgeMs / 1000))}s` +
-            (typeof pollStatus.statusCode === 'number' ? ` sc=${pollStatus.statusCode}` : '') +
-            (typeof pollStatus.bytes === 'number' ? ` b=${pollStatus.bytes}` : '') +
-            (typeof pollStatus.parsedSymbols === 'number' ? ` syms=${pollStatus.parsedSymbols}` : '') +
-            (pollStatus.error ? ` err=${pollStatus.error}` : '')
-          : 'Polling Status: waiting...'
-
-  const copyDiagnostics = async (): Promise<void> => {
-    const diagnostics = [
-      `ts=${new Date().toISOString()}`,
-      `ipcAvailable=${ipcAvailable}`,
-      `storeAvailable=${storeAvailable}`,
-      `hasPollStatus=${hasPollStatus}`,
-      `userAgent=${navigator.userAgent}`,
-      `refreshRate=${settings.refreshRate}`,
-      `stocks=${JSON.stringify(stocks)}`,
-      `pollStatus=${JSON.stringify(pollStatus)}`
-    ].join('\n')
-
-    const setTip = (text: string): void => {
-      setCopyTip(text)
-      window.setTimeout(() => setCopyTip(''), 1500)
-    }
-
-    try {
-      if (window?.api?.copyToClipboard) {
-        await window.api.copyToClipboard(diagnostics)
-        setTip('已复制')
-      } else {
-        await navigator.clipboard.writeText(diagnostics)
-        setTip('已复制')
-      }
-    } catch {
-      try {
-        const textarea = document.createElement('textarea')
-        textarea.value = diagnostics
-        textarea.style.position = 'fixed'
-        textarea.style.left = '-9999px'
-        textarea.style.top = '0'
-        document.body.appendChild(textarea)
-        textarea.focus()
-        textarea.select()
-        const ok = document.execCommand('copy')
-        document.body.removeChild(textarea)
-        setTip(ok ? '已复制' : '复制失败')
-      } catch {
-        setTip('复制失败')
-      }
-    }
-  }
 
   return (
     <div
@@ -427,58 +321,6 @@ function Monitor(): React.JSX.Element {
         } as React.CSSProperties
       }
     >
-      <div
-        style={
-          {
-            width: '100%',
-            position: 'relative',
-            paddingRight: '90px',
-            fontSize: '11px',
-            opacity: 0.85,
-            marginBottom: '6px',
-            whiteSpace: 'nowrap',
-            boxSizing: 'border-box'
-          } as React.CSSProperties
-        }
-      >
-        <div
-          style={
-            {
-              width: '100%',
-              minWidth: 0,
-              whiteSpace: 'nowrap',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis'
-            } as React.CSSProperties
-          }
-        >
-          {statusBarText}
-        </div>
-        <button
-          type="button"
-          onClick={copyDiagnostics}
-          onPointerDown={(e) => e.stopPropagation()}
-          style={
-            {
-              position: 'absolute',
-              right: 0,
-              top: '50%',
-              transform: 'translateY(-50%)',
-              fontSize: '11px',
-              padding: '2px 6px',
-              minWidth: '78px',
-              borderRadius: '6px',
-              border: `1px solid ${settings.theme ? 'rgba(255,255,255,0.25)' : 'rgba(0,0,0,0.2)'}`,
-              background: 'transparent',
-              color: defaultTextColor,
-              opacity: 0.9,
-              cursor: 'pointer'
-            } as React.CSSProperties
-          }
-        >
-          {copyTip ? copyTip : '复制诊断'}
-        </button>
-      </div>
       <div style={{ width: '100%' } as React.CSSProperties}>
         {stocks
           .filter((s) => s.visible)
@@ -487,20 +329,11 @@ function Monitor(): React.JSX.Element {
             const data =
               stockData[cleanSymbol] || stockData[cleanSymbol.toLowerCase()] || stockData[cleanSymbol.toUpperCase()]
             if (!data) {
-              const phase = pollStatus?.phase
-              const error = pollStatus?.error
-              const statusText =
-                webMode
-                  ? 'IPC unavailable (web mode)'
-                  : watchdogStale
-                    ? 'Polling not running / IPC disconnected'
-                    : phase === 'error' && error
-                      ? `Error: ${error}`
-                      : 'Loading...'
+              const statusText = 'Loading...'
               return (
                 <div key={stock.key} style={{ display: 'flex', padding: '2px 0' }}>
                   <span>
-                    {stock.name} - {statusText}{lastSuccessText ? ` (last ok ${lastSuccessText})` : ''}
+                    {stock.name} - {statusText}
                   </span>
                 </div>
               )

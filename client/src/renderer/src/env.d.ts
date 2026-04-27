@@ -11,11 +11,7 @@ interface Window {
     tempUnlock: (unlock: boolean) => void
     onStockDataUpdated: (callback: (data: Record<string, any>) => void) => void
     offStockDataUpdated: () => void
-    getStockPollStatus: () => Promise<StockPollStatus | null>
-    onStockPollStatus: (callback: (payload: StockPollStatus) => void) => void
-    offStockPollStatus: () => void
     onConfigUpdated: (callback: (key: string) => void) => void
     offConfigUpdated: () => void
-    copyToClipboard?: (text: string) => Promise<void>
   }
 }
