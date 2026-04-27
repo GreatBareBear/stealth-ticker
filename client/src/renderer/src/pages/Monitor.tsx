@@ -450,11 +450,12 @@ function Monitor(): React.JSX.Element {
                 : 'Polling Status: waiting...'}
           </div>
         <button
-          type="button"
-          onClick={copyDiagnostics}
-          style={
-            {
-              flex: 'none',
+            type="button"
+            onClick={copyDiagnostics}
+            onPointerDown={(e) => e.stopPropagation()}
+            style={
+              {
+                flex: 'none',
               fontSize: '11px',
               padding: '2px 6px',
               borderRadius: '6px',
