@@ -352,6 +352,11 @@ app.whenReady().then(() => {
     return alertService?.getLastPollStatus?.() ?? null
   })
 
+  ipcMain.handle('copy-to-clipboard', (_event, text) => {
+    const { clipboard } = require('electron')
+    clipboard.writeText(text)
+  })
+
   ipcMain.on('show-context-menu', (event) => {
     const settings: any = store.get('settings') || {}
     if (settings.enableContextMenu === false) return
