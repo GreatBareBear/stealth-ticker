@@ -343,6 +343,16 @@ function Monitor(): React.JSX.Element {
               )
             }
 
+            if ((data as any).error) {
+              return (
+                <div key={stock.key} style={{ display: 'flex', padding: '2px 0', color: '#ff4d4f' }}>
+                  <span>
+                    {stock.name} - {(data as any).error}
+                  </span>
+                </div>
+              )
+            }
+
             const color = getColor(data.changeAmt)
             const isUp = parseFloat(data.changeAmt) > 0
             const sign = isUp ? '+' : ''
