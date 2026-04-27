@@ -1,0 +1,4 @@
+- [x] 当 `window.api`/`window.api.store` 不可用时，状态条显示 “IPC unavailable (web mode)”，且不会误判为 “IPC disconnected”。
+- [x] 在窄窗口/长状态文案情况下，“复制诊断”按钮始终可见且可点击。
+- [x] 复制内容包含 ipc/store/pollStatus 可用性标记与 userAgent。
+- [x] `npm run typecheck:web` 与 `npm run typecheck:node` 通过。
