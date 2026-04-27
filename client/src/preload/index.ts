@@ -16,20 +16,6 @@ const api = {
   offStockDataUpdated: () => {
     ipcRenderer.removeAllListeners('stock-data-updated')
   },
-  getStockPollStatus: async () => {
-    try {
-      return await ipcRenderer.invoke('get-stock-poll-status')
-    } catch {
-      return null
-    }
-  },
-  onStockPollStatus: (callback: (payload: Record<string, any>) => void) => {
-    ipcRenderer.on('stock-poll-status', (_event, payload) => callback(payload))
-  },
-  offStockPollStatus: () => {
-    ipcRenderer.removeAllListeners('stock-poll-status')
-  },
-  copyToClipboard: (text: string) => ipcRenderer.invoke('copy-to-clipboard', text),
   onConfigUpdated: (callback: (key: string) => void) => {
     ipcRenderer.on('config-updated', (_event, key) => callback(key))
   },

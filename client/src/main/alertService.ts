@@ -2,22 +2,7 @@ import { BrowserWindow, Tray, shell, Notification } from 'electron'
 import { net } from 'electron'
 import * as iconv from 'iconv-lite'
 
-export type StockPollPhase = 'start' | 'success' | 'error'
-
-export interface StockPollStatus {
-  phase: StockPollPhase
-  ts: number
-  url?: string
-  statusCode?: number
-  bytes?: number
-  parsedSymbols?: number
-  error?: string
-  consecutiveFailures?: number
-  lastSuccessAt?: number | null
-  lastEventAt?: number
-}
-
-interface AlertConfig {
+export interface AlertConfig {
   type: 'price' | 'percent'
   condition: 'above' | 'below'
   threshold: number
@@ -45,8 +30,6 @@ export class AlertService {
   private lastTriggeredAt: Map<string, number> = new Map()
   private triggeredKeys: Set<string> = new Set()
   private consecutiveFailures: number = 0
-  private lastSuccessAt: number | null = null
-  private lastPollStatus: StockPollStatus | null = null
 
   constructor(store: any, mainWindow: BrowserWindow | null, tray: Tray | null) {
     this.store = store
@@ -60,10 +43,6 @@ export class AlertService {
 
   public setTray(t: Tray | null) {
     this.tray = t
-  }
-
-  public getLastPollStatus(): StockPollStatus | null {
-    return this.lastPollStatus
   }
 
   public reloadConfig() {
@@ -85,18 +64,6 @@ export class AlertService {
     if (this.blinkInterval) {
       clearInterval(this.blinkInterval)
       this.blinkInterval = null
-    }
-  }
-
-  private emitPollStatus(payload: StockPollStatus) {
-    const status: StockPollStatus = {
-      ...payload,
-      lastEventAt: typeof payload.lastEventAt === 'number' ? payload.lastEventAt : payload.ts
-    }
-    this.lastPollStatus = status
-
-    if (this.mainWindow && !this.mainWindow.isDestroyed()) {
-      this.mainWindow.webContents.send('stock-poll-status', status)
     }
   }
 
@@ -136,34 +103,15 @@ export class AlertService {
       }).join(',')
       const url = `https://qt.gtimg.cn/q=${symbols}`
 
-      this.emitPollStatus({
-        phase: 'start',
-        ts: Date.now(),
-        url,
-        consecutiveFailures: this.consecutiveFailures,
-        lastSuccessAt: this.lastSuccessAt
-      })
-
       const request = net.request(url)
       
       // Setup timeout (e.g., 5 seconds)
-      let timeoutFired = false
       const reqTimeout = setTimeout(() => {
-        timeoutFired = true
         request.abort()
-        this.emitPollStatus({
-          phase: 'error',
-          ts: Date.now(),
-          url,
-          error: 'timeout',
-          consecutiveFailures: this.consecutiveFailures,
-          lastSuccessAt: this.lastSuccessAt
-        })
       }, 5000)
 
       request.on('response', (response) => {
         let data = Buffer.alloc(0)
-        const statusCode = response.statusCode
         response.on('data', (chunk) => {
           data = Buffer.concat([data, chunk])
         })
@@ -173,12 +121,6 @@ export class AlertService {
             const text = iconv.decode(data, 'gbk')
             const newData = this.parseResponse(text)
 
-            const bytes = data.length
-            const parsedSymbols = new Set(
-              Object.values(newData)
-                .map((x: any) => (x && typeof x === 'object' ? x.symbol : undefined))
-                .filter((x): x is string => typeof x === 'string' && x.length > 0)
-            ).size
             // Mark invalid symbols that yielded no data
             visibleStocks.forEach(stock => {
               const cleanSymbol = stock.symbol.trim()
@@ -204,31 +146,9 @@ export class AlertService {
 
             // Reset failures on success
             this.consecutiveFailures = 0
-            this.lastSuccessAt = Date.now()
-
-            this.emitPollStatus({
-              phase: 'success',
-              ts: Date.now(),
-              url,
-              statusCode,
-              bytes,
-              parsedSymbols,
-              consecutiveFailures: this.consecutiveFailures,
-              lastSuccessAt: this.lastSuccessAt
-            })
           } catch (err) {
             console.error('Failed to parse response:', err)
             this.consecutiveFailures++
-            this.emitPollStatus({
-              phase: 'error',
-              ts: Date.now(),
-              url,
-              statusCode,
-              bytes: data.length,
-              error: String(err),
-              consecutiveFailures: this.consecutiveFailures,
-              lastSuccessAt: this.lastSuccessAt
-            })
           } finally {
             this.scheduleNextPoll()
           }
@@ -239,16 +159,6 @@ export class AlertService {
         clearTimeout(reqTimeout)
         console.error('Fetch stock data failed in main process:', err)
         this.consecutiveFailures++
-        if (!timeoutFired) {
-          this.emitPollStatus({
-            phase: 'error',
-            ts: Date.now(),
-            url,
-            error: String(err),
-            consecutiveFailures: this.consecutiveFailures,
-            lastSuccessAt: this.lastSuccessAt
-          })
-        }
         this.scheduleNextPoll()
       })
       
@@ -256,13 +166,6 @@ export class AlertService {
     } catch (e) {
       console.error('Error in alert poll:', e)
       this.consecutiveFailures++
-      this.emitPollStatus({
-        phase: 'error',
-        ts: Date.now(),
-        error: String(e),
-        consecutiveFailures: this.consecutiveFailures,
-        lastSuccessAt: this.lastSuccessAt
-      })
       this.scheduleNextPoll()
     }
   }
