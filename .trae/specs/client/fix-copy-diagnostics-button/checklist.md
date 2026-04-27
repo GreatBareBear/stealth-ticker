@@ -1,0 +1,2 @@
+- [x] 在 `Monitor.tsx` 中的 `copyDiagnostics` 按钮上，添加了 `onPointerDown` 事件，阻止冒泡，确保点击复制按钮时不再触发界面的拖拽行为。
+- [x] `npm run typecheck:web` 与 `npm run typecheck:node` 通过。
